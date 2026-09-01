@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NAM bill — License Admin</title>
+  <meta name="theme-color" content="#0F766E" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #F0FDFA;
+      --surface: #ffffff;
+      --text: #134E4A;
+      --muted: #4B6B67;
+      --border: #D5E8E4;
+      --primary: #0F766E;
+      --primary-dark: #0B5C56;
+      --secondary: #14B8A6;
+      --cta: #0369A1;
+      --sidebar: #042F2E;
+      --danger: #B42318;
+      --danger-bg: #FEE4E2;
+      --warn: #B54708;
+      --warn-bg: #FFF0D9;
+      --ok: #067647;
+      --ok-bg: #DCFAE6;
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      font-family: "Fira Sans", Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button, a.btn, .quick-action, .menu button, .close { cursor: pointer; }
+    button, input, select, textarea { font-family: inherit; }
+
+    :focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(160deg, #042F2E 0%, #0F766E 55%, #F0FDFA 55%);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 18px 50px rgba(4, 47, 46, 0.18);
+    }
+
+    .login-card h1 { font-size: 22px; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    .login-error { display: none; color: var(--danger); font-size: 13px; margin: 8px 0 12px; }
+    .login-error.show { display: block; }
+
+    .hidden { display: none !important; }
+
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 240px;
+      background: var(--sidebar);
+      color: #fff;
+      padding: 24px 14px;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 10px 28px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .logo img { width: 34px; height: 34px; border-radius: 8px; background: #fff; }
+    .logo span { color: var(--secondary); }
+
+    .menu { list-style: none; }
+    .menu li { margin-bottom: 6px; }
+
+    .menu button {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #B7D4D0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .menu button:hover,
+    .menu button.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .menu svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    .main { margin-left: 240px; min-height: 100vh; }
+
+    .topbar {
+      height: 70px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+    }
+
+    .page-title { font-size: 20px; font-weight: 700; }
+
+    .user { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+    .avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      display: flex; align-items: center; justify-content: center; font-weight: 700;
+    }
+
+    .content { padding: 24px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .stat-label { color: var(--muted); font-size: 13px; font-weight: 600; }
+    .stat-value { font-size: 28px; font-weight: 700; margin-top: 8px; letter-spacing: -0.4px; }
+    .stat-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .panel-title { font-size: 17px; font-weight: 700; }
+    .panel-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .btn {
+      border: 0;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #EEF2F7; color: #344054; }
+    .btn-danger { background: var(--danger-bg); color: var(--danger); }
+    .btn-blue { background: #E8F1FF; color: var(--cta); }
+    .btn-wide { width: 100%; justify-content: center; padding: 12px; }
+
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+
+    input, select, textarea {
+      border: 1px solid #D9E0E8;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fff;
+      outline: none;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+    textarea { min-height: 90px; resize: vertical; }
+
+    .table-wrapper { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 1080px; }
+    th {
+      background: #F7F9FC;
+      color: #667085;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 12px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px;
+      border-top: 1px solid #EDF0F4;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    tr:hover td { background: #FAFCFE; }
+    .mono { font-family: "Fira Code", ui-monospace, monospace; letter-spacing: 0.4px; }
+
+    .badge {
+      padding: 4px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .badge-green { background: var(--ok-bg); color: var(--ok); }
+    .badge-red { background: var(--danger-bg); color: var(--danger); }
+    .badge-orange { background: var(--warn-bg); color: var(--warn); }
+    .badge-gray { background: #EEF2F6; color: #667085; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 47, 46, 0.45);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal.show { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 12px;
+      width: 860px;
+      max-width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+    }
+    .modal-header, .modal-footer { padding: 18px 20px; }
+    .modal-header { border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .close { border: 0; background: none; font-size: 22px; color: var(--muted); }
+    .modal-body { padding: 20px; }
+    .modal-footer { border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-size: 12px; font-weight: 700; color: #475467; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; }
+    .req { color: var(--danger); }
+
+    .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+    .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .quick-action {
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 10px;
+      background: #fff;
+      text-align: left;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .quick-action:hover { border-color: var(--primary); background: #F0FDFA; }
+    .quick-action strong { display: block; margin-bottom: 4px; }
+    .quick-action span { color: var(--muted); font-size: 12px; }
+
+    .sheet-status {
+      display: block;
+      background: var(--ok-bg);
+      color: var(--ok);
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+      word-break: break-all;
+    }
+    .sheet-status a { color: inherit; font-weight: 700; }
+    .sheet-status.warn { background: var(--warn-bg); color: var(--warn); }
+    .sheet-status.error { background: var(--danger-bg); color: var(--danger); }
+
+    .period-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .period-btn {
+      padding: 10px 8px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .period-btn.active { border-color: var(--primary); background: #F0FDFA; color: var(--text); }
+
+    .help {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .code-block {
+      background: #042F2E;
+      color: #D1FAE5;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: "Fira Code", ui-monospace, monospace;
+      font-size: 11px;
+      overflow: auto;
+      white-space: pre;
+      max-height: 280px;
+    }
+
+    .field-table { min-width: 640px; }
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: #042F2E;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 800;
+      display: none;
+    }
+    .toast.show { display: block; }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 28px 12px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 1000px) {
+      .sidebar { width: 72px; }
+      .logo span, .logo-text, .menu button span.label { display: none; }
+      .main { margin-left: 72px; }
+      .stats, .dashboard-grid, .quick-actions { grid-template-columns: 1fr 1fr; }
+      .menu button { justify-content: center; padding: 12px; }
+    }
+
+    @media (max-width: 640px) {
+      .content { padding: 14px; }
+      .topbar { padding: 0 14px; }
+      .stats, .dashboard-grid, .quick-actions, .form-grid, .period-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginScreen" class="login-screen">
+    <form class="login-card" id="adminLoginForm">
+      <h1>NAM bill Admin</h1>
+      <p>Sign in to manage customers, license keys, Google Sheet sync, and app updates.</p>
+      <div class="form-group">
+        <label for="authUser">Username</label>
+        <input id="authUser" autocomplete="username" required />
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label for="authPass">Password</label>
+        <input id="authPass" type="password" autocomplete="current-password" required />
+      </div>
+      <p class="login-error" id="authError">Invalid username or password.</p>
+      <button class="btn btn-primary btn-wide" type="submit" style="margin-top:16px">Login</button>
+    </form>
+  </div>
+
+  <div id="appShell" class="hidden">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="../assets/nam-bill-logo.png" alt="" />
+        <span class="logo-text">NAM <span>bill</span></span>
+      </div>
+      <ul class="menu">
+        <li><button class="active" data-page="dashboard" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10l8-6 8 6v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9z"/><path d="M9 20v-6h6v6"/></svg>
+          <span class="label">Dashboard</span>
+        </button></li>
+        <li><button data-page="customers" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span class="label">Customers</span>
+        </button></li>
+        <li><button data-page="generate" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span class="label">Generate Key</span>
+        </button></li>
+        <li><button data-page="api" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 5.93"/><path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.41a5 5 0 0 0 7.07 7.07L14 18.07"/></svg>
+          <span class="label">API Keys</span>
+        </button></li>
+        <li><button data-page="reports" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+          <span class="label">Reports</span>
+        </button></li>
+        <li><button data-page="settings" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H8a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V8c.3.6.9 1 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          <span class="label">Settings</span>
+        </button></li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="user">
+          <strong>Admin</strong>
+          <div class="avatar">A</div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section id="dashboard" class="page active">
+          <div class="stats">
+            <div class="stat-card"><div class="stat-label">Total customers</div><div class="stat-value" id="statTotal">0</div><div class="stat-sub">Rows in Google Sheet</div></div>
+            <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value" id="statActive">0</div><div class="stat-sub">Can log in to the app</div></div>
+            <div class="stat-card"><div class="stat-label">Expired</div><div class="stat-value" id="statExpired">0</div><div class="stat-sub">Past expire date</div></div>
+            <div class="stat-card"><div class="stat-label">Disabled</div><div class="stat-value" id="statDisabled">0</div><div class="stat-sub">Blocked remotely</div></div>
+          </div>
+          <div class="dashboard-grid">
+            <div class="panel">
+              <div class="panel-header"><div class="panel-title">Quick actions</div></div>
+              <div class="quick-actions">
+                <button class="quick-action" type="button" data-page="generate"><strong>Generate license key</strong><span>Create a 20-character key and save it to the sheet</span></button>
+                <button class="quick-action" type="button" data-page="customers"><strong>View customers</strong><span>Search, disable, or export every licensed shop</span></button>
+                <button class="quick-action" type="button" id="syncNowBtn"><strong>Sync Google Sheet</strong><span>Load all generated keys from your sheet URL</span></button>
+                <button class="quick-action" type="button" data-page="settings"><strong>App update control</strong><span>Force shops to download a new NAM bill build</span></button>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-header"><div class="panel-title">Google Sheet</div></div>
+              <div class="sheet-status" id="dashSheetStatus">Connected to <a href="https://docs.google.com/spreadsheets/d/1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato/edit?gid=0#gid=0" target="_blank" rel="noopener">your Google Sheet</a>. Sign in to load customers.</div>
+              <button class="btn btn-primary" type="button" id="dashSyncBtn" style="margin-top:14px">Sync now</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="customers" class="page">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Customers</div>
+                <div class="panel-sub">Every generated key stored in your Google Sheet. Disabling a row blocks app login.</div>
+              </div>
+              <button class="btn btn-primary" type="button" id="addCustomerBtn">Add customer</button>
+            </div>
+            <div class="filters">
+              <input id="customerSearch" placeholder="Search name, shop, mobile, or key..." />
+              <select id="customerStatusFilter">
+                <option value="">All status</option>
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>Disabled</option>
+                <option>Expired</option>
+              </select>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th><th>Shop</th><th>Mobile</th><th>Email</th><th>Login key</th>
+                    <th>Expire date</th><th>Payment</th><th>Amount</th><th>Status</th><th>Logged in</th><th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="customerTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="generate" class="page">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Generate license key</div>
+                <div class="panel-sub">Required fields are marked. Saving also writes the customer row to Google Sheets.</div>
+              </div>
+            </div>
+            <div class="form-grid" id="generateForm">
+              <div class="form-group"><label>Name <span class="req">*</span></label><input id="custName" required /></div>
+              <div class="form-group"><label>Mobile number <span class="req">*</span></label><input id="custMobile" maxlength="10" inputmode="numeric" /></div>
+              <div class="form-group"><label>Email ID</label><input id="custEmail" type="email" /></div>
+              <div class="form-group"><label>Shop name <span class="req">*</span></label><input id="custShop" placeholder="Must match app login" /></div>
+              <div class="form-group"><label>User / renewal code</label><input id="custUserCode" maxlength="10" inputmode="numeric" placeholder="10 digits from app" /></div>
+              <div class="form-group"><label>10-digit renewal code <span class="req">*</span></label><input id="renewalCode" maxlength="10" inputmode="numeric" /></div>
+              <div class="form-group"><label>Date of payment <span class="req">*</span></label><input id="custPaymentDate" type="date" /></div>
+              <div class="form-group"><label>Date of login <span class="req">*</span></label><input id="custLoginDate" type="date" /></div>
+              <div class="form-group"><label>Expire date <span class="req">*</span></label><input id="custExpireDate" type="date" /></div>
+              <div class="form-group">
+                <label>Payment mode <span class="req">*</span></label>
+                <select id="custPaymentMode">
+                  <option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Card</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Amount (₹) <span class="req">*</span></label><input id="custAmount" /></div>
+              <div class="form-group">
+                <label>Status <span class="req">*</span></label>
+                <select id="custStatus"><option>Active</option><option>Inactive</option><option>Disabled</option></select>
+              </div>
+              <div class="form-group"><label>Login key</label><input id="custLoginKey" class="mono" readonly placeholder="Filled after generate" /></div>
+              <div class="form-group full"><label>Remarks</label><input id="custRemarks" /></div>
+            </div>
+            <p class="help" id="renewalHint" style="margin:12px 0">Renewal code must match the shop name the customer typed in the NAM bill login screen. Valid for 45 minutes.</p>
+            <div class="panel-title" style="margin:8px 0 10px">License period</div>
+            <div class="period-grid" id="periodGrid">
+              <button type="button" class="period-btn" data-days="0">Current day</button>
+              <button type="button" class="period-btn" data-days="1">1 day</button>
+              <button type="button" class="period-btn" data-days="7">7 days</button>
+              <button type="button" class="period-btn" data-days="30">1 month</button>
+              <button type="button" class="period-btn active" data-days="90">3 months</button>
+              <button type="button" class="period-btn" data-days="180">6 months</button>
+              <button type="button" class="period-btn" data-days="365">1 year</button>
+              <button type="button" class="period-btn" data-custom="true">Custom</button>
+            </div>
+            <div id="customDateWrap" class="form-group" style="display:none;margin-top:12px;max-width:280px">
+              <label>Custom expiry</label>
+              <input type="date" id="customDate" />
+            </div>
+            <p id="generateError" class="login-error"></p>
+            <button class="btn btn-primary" type="button" id="generateBtn" style="margin-top:16px">Generate and save to sheet</button>
+            <div id="generateResult" class="sheet-status" style="display:none;margin-top:16px"></div>
+          </div>
+        </section>
+
+        <section id="api" class="page">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">API credentials</div>
+                <div class="panel-sub">Customer generates a 10-character App Unique Key in Settings, then you return the three tokens.</div>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-group"><label>App Unique Key (10)</label><input id="apiUniqueKey" class="mono" maxlength="10" /></div>
+              <div class="form-group"><label>Shop name (optional)</label><input id="apiShopName" /></div>
+            </div>
+            <p id="apiError" class="login-error"></p>
+            <button class="btn btn-primary" type="button" id="generateApiBtn" style="margin-top:16px">Generate API credentials</button>
+            <div id="apiResult" style="display:none;margin-top:16px">
+              <div class="form-grid">
+                <div class="form-group"><label>App Key (20)</label><input id="outAppKey" class="mono" readonly /></div>
+                <div class="form-group"><label>Secret Token (25)</label><input id="outSecretToken" class="mono" readonly /></div>
+                <div class="form-group"><label>Client Token (10)</label><input id="outClientToken" class="mono" readonly /></div>
+                <div class="form-group"><label>App Unique Key</label><input id="outUniqueKey" class="mono" readonly /></div>
+              </div>
+              <button class="btn btn-secondary" type="button" id="copyApiBtn" style="margin-top:12px">Copy all for customer</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="reports" class="page">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Reports</div>
+                <div class="panel-sub">Export the same customer fields the Google Sheet uses.</div>
+              </div>
+            </div>
+            <div class="quick-actions">
+              <button class="btn btn-primary" type="button" id="exportCsvBtn">Export customers CSV</button>
+              <button class="btn btn-secondary" type="button" id="exportControlBtn">Download license-control.json</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="settings" class="page">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Google Sheet connection</div>
+                <div class="panel-sub">The spreadsheet URL is already connected. The app and this admin page read every generated key from that sheet.</div>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>Google Sheet URL <span class="req">*</span></label>
+                <input id="googleSheetUrl" value="https://docs.google.com/spreadsheets/d/1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato/edit?gid=0#gid=0" placeholder="https://docs.google.com/spreadsheets/d/...." />
+              </div>
+              <div class="form-group">
+                <label>SheetDB API URL (recommended for saving)</label>
+                <input id="sheetdbUrl" value="https://sheetdb.io/api/v1/y019wjypdybot" placeholder="https://sheetdb.io/api/v1/..." />
+              </div>
+              <div class="form-group">
+                <label>Google Apps Script URL (optional)</label>
+                <input id="appsScriptUrl" placeholder="https://script.google.com/macros/s/..." />
+              </div>
+            </div>
+            <p class="help" style="margin:12px 0">Share the sheet as <strong>Anyone with the link can view</strong> so the NAM bill app can check login. Use SheetDB or Apps Script so this dashboard can add/update rows. Customer rows are stored as plain text.</p>
+            <button class="btn btn-primary" type="button" id="saveSheetSettingsBtn">Save and sync sheet</button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Required Google Sheet columns</div>
+                <div class="panel-sub">Row 1 must use these exact headers. A special control row can force app updates.</div>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table class="field-table">
+                <thead><tr><th>Column</th><th>Required</th><th>Used for</th></tr></thead>
+                <tbody>
+                  <tr><td>Name</td><td>Yes</td><td>Customer name</td></tr>
+                  <tr><td>Mobile Number</td><td>Yes</td><td>Unique contact / lookup</td></tr>
+                  <tr><td>Email ID</td><td>No</td><td>Contact. Control row: APK / Play download URL</td></tr>
+                  <tr><td>Shop name</td><td>Yes</td><td>Must match app login. Control row: __NAM_BILL_CONTROL__</td></tr>
+                  <tr><td>User Code</td><td>No</td><td>Last renewal code</td></tr>
+                  <tr><td>Date of payment</td><td>Yes</td><td>Billing record</td></tr>
+                  <tr><td>Date of login</td><td>Yes</td><td>License issued date</td></tr>
+                  <tr><td>Expire date</td><td>Yes</td><td>Remote expiry (blocks app even if key still decodes)</td></tr>
+                  <tr><td>Payment mode</td><td>Yes</td><td>UPI / Cash / etc. Control row: Strict or Open</td></tr>
+                  <tr><td>Amount</td><td>Yes</td><td>Fee. Control row: latest app version</td></tr>
+                  <tr><td>Login key</td><td>Yes</td><td>20-character key. Control row: minimum app version</td></tr>
+                  <tr><td>Status</td><td>Yes</td><td>Active / Inactive / Disabled. Control row: ForceUpdate to block old apps</td></tr>
+                  <tr><td>Is Login</td><td>Yes</td><td>TRUE while the app is logged in. FALSE after logout. Blocks the same key on a second device</td></tr>
+                  <tr><td>Login session</td><td>Auto</td><td>Written by the app so a takeover can kick the previous device</td></tr>
+                  <tr><td>Remarks</td><td>No</td><td>Notes. Control row: update message shown in the app</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">App update &amp; expired-account control</div>
+                <div class="panel-sub">Saved as the __NAM_BILL_CONTROL__ row. The app checks this on every login.</div>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-group"><label>Minimum app version</label><input id="minAppVersion" placeholder="1.0.0" /></div>
+              <div class="form-group"><label>Latest app version</label><input id="latestAppVersion" placeholder="1.0.0" /></div>
+              <div class="form-group full"><label>Download URL</label><input id="downloadUrl" placeholder="https://github.com/narenthar0007/mahi/releases" /></div>
+              <div class="form-group full"><label>Update message</label><input id="updateMessage" placeholder="Please download the latest NAM bill app." /></div>
+              <div class="form-group">
+                <label>Force update</label>
+                <select id="forceUpdate"><option value="false">No — allow older apps</option><option value="true">Yes — block login until they download</option></select>
+              </div>
+              <div class="form-group">
+                <label>Unknown keys</label>
+                <select id="requireSheetRecord"><option value="true">Block if not in this sheet</option><option value="false">Allow crypto-only keys</option></select>
+              </div>
+            </div>
+            <button class="btn btn-primary" type="button" id="saveControlBtn" style="margin-top:16px">Save control row to sheet</button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Apps Script (optional write API)</div>
+                <div class="panel-sub">If you do not use SheetDB, deploy this script on the same spreadsheet, then paste the web app URL above.</div>
+              </div>
+              <button class="btn btn-secondary" type="button" id="copyScriptBtn">Copy script</button>
+            </div>
+            <pre class="code-block" id="appsScriptSource"></pre>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="customerModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="customerModalTitle">Edit customer</div>
+        <button class="close" type="button" data-close="customerModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editIndex" />
+        <div class="form-grid">
+          <div class="form-group"><label>Name <span class="req">*</span></label><input id="editName" /></div>
+          <div class="form-group"><label>Mobile <span class="req">*</span></label><input id="editMobile" maxlength="10" /></div>
+          <div class="form-group"><label>Email</label><input id="editEmail" /></div>
+          <div class="form-group"><label>Shop name <span class="req">*</span></label><input id="editShop" /></div>
+          <div class="form-group"><label>Expire date</label><input id="editExpire" type="date" /></div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="editStatus"><option>Active</option><option>Inactive</option><option>Disabled</option></select>
+          </div>
+          <div class="form-group"><label>Login key</label><input id="editKey" class="mono" /></div>
+          <div class="form-group"><label>Amount</label><input id="editAmount" /></div>
+          <div class="form-group full"><label>Remarks</label><input id="editRemarks" /></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-close="customerModal">Cancel</button>
+        <button class="btn btn-primary" type="button" id="saveCustomerBtn">Save customer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="../js/secureCrypto.js"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>

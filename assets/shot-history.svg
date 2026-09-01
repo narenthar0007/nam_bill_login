@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-label="NAM bill Order History screen">
+  <defs>
+    <linearGradient id="hdr2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0C1F33"/>
+      <stop offset="100%" stop-color="#16324A"/>
+    </linearGradient>
+    <linearGradient id="gold2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F0DFB0"/>
+      <stop offset="100%" stop-color="#C9A84C"/>
+    </linearGradient>
+  </defs>
+  <rect width="390" height="844" fill="#F5F5F0"/>
+  <rect width="390" height="96" fill="url(#hdr2)"/>
+  <text x="20" y="48" fill="#F0DFB0" font-family="Georgia, serif" font-size="22" font-weight="600">Order History</text>
+  <text x="20" y="72" fill="rgba(240,223,176,0.7)" font-family="Arial, sans-serif" font-size="12">Today · 12 orders</text>
+
+  <rect x="20" y="118" width="350" height="72" rx="16" fill="#0C1F33"/>
+  <text x="36" y="148" fill="rgba(240,223,176,0.65)" font-family="Arial, sans-serif" font-size="11" letter-spacing="1">REVENUE TODAY</text>
+  <text x="36" y="176" fill="#F0DFB0" font-family="Georgia, serif" font-size="26" font-weight="600">₹18,420</text>
+  <text x="300" y="176" fill="#E4C872" font-family="Arial, sans-serif" font-size="13" font-weight="600">+14%</text>
+
+  <g font-family="Arial, sans-serif">
+    <rect x="20" y="210" width="350" height="100" rx="16" fill="#fff" stroke="rgba(201,168,76,0.22)"/>
+    <text x="36" y="240" fill="#0C1F33" font-family="Georgia, serif" font-size="17" font-weight="600">ORD-1042</text>
+    <text x="300" y="240" fill="#9A7B2F" font-size="15" font-weight="700">₹246.75</text>
+    <text x="36" y="264" fill="#5A6B7A" font-size="12">Coffee ×1 · Sandwich ×1 · Tea ×1</text>
+    <rect x="36" y="278" width="110" height="22" rx="11" fill="rgba(201,168,76,0.15)"/>
+    <text x="91" y="293" text-anchor="middle" fill="#9A7B2F" font-size="10" font-weight="700">WhatsApp sent</text>
+
+    <rect x="20" y="324" width="350" height="100" rx="16" fill="#fff" stroke="rgba(201,168,76,0.22)"/>
+    <text x="36" y="354" fill="#0C1F33" font-family="Georgia, serif" font-size="17" font-weight="600">ORD-1041</text>
+    <text x="310" y="354" fill="#9A7B2F" font-size="15" font-weight="700">₹160</text>
+    <text x="36" y="378" fill="#5A6B7A" font-size="12">Pasta · Large · Extra cheese</text>
+    <rect x="36" y="392" width="88" height="22" rx="11" fill="rgba(26,166,160,0.12)"/>
+    <text x="80" y="407" text-anchor="middle" fill="#0D9488" font-size="10" font-weight="700">Paid</text>
+
+    <rect x="20" y="438" width="350" height="100" rx="16" fill="#fff" stroke="rgba(201,168,76,0.22)"/>
+    <text x="36" y="468" fill="#0C1F33" font-family="Georgia, serif" font-size="17" font-weight="600">ORD-1040</text>
+    <text x="310" y="468" fill="#9A7B2F" font-size="15" font-weight="700">₹95</text>
+    <text x="36" y="492" fill="#5A6B7A" font-size="12">Muffin ×1 · Brownie ×1</text>
+    <rect x="36" y="506" width="88" height="22" rx="11" fill="rgba(26,166,160,0.12)"/>
+    <text x="80" y="521" text-anchor="middle" fill="#0D9488" font-size="10" font-weight="700">Paid</text>
+  </g>
+
+  <rect x="20" y="560" width="350" height="48" rx="24" fill="url(#gold2)"/>
+  <text x="195" y="590" text-anchor="middle" fill="#1A1408" font-family="Arial, sans-serif" font-size="14" font-weight="700">Export Excel report</text>
+
+  <rect y="780" width="390" height="64" fill="#fff" stroke="#E8EEF2"/>
+  <text x="65" y="818" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="11">Items</text>
+  <text x="195" y="818" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="11">Billing</text>
+  <text x="325" y="818" text-anchor="middle" fill="#9A7B2F" font-family="Arial, sans-serif" font-size="11" font-weight="700">History</text>
+</svg>

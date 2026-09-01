@@ -1,0 +1,13 @@
+{
+  "minAppVersion": "1.0.0",
+  "latestAppVersion": "1.0.0",
+  "forceUpdate": false,
+  "downloadUrl": "https://github.com/narenthar0007/mahi/releases",
+  "updateMessage": "A new version of NAM bill is available. Please download the latest app to continue.",
+  "googleSheetId": "1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato",
+  "googleSheetUrl": "https://docs.google.com/spreadsheets/d/1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato/edit?gid=0#gid=0",
+  "sheetdbUrl": "https://sheetdb.io/api/v1/y019wjypdybot",
+  "appsScriptUrl": "",
+  "requireSheetRecord": true,
+  "blockDisabledAccounts": true
+}

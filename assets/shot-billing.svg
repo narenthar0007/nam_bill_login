@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-label="NAM bill Billing screen">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0C1F33"/>
+      <stop offset="100%" stop-color="#16324A"/>
+    </linearGradient>
+    <linearGradient id="cta" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F0DFB0"/>
+      <stop offset="45%" stop-color="#C9A84C"/>
+      <stop offset="100%" stop-color="#9A7B2F"/>
+    </linearGradient>
+  </defs>
+  <rect width="390" height="844" fill="#F5F5F0"/>
+  <rect width="390" height="96" fill="url(#hdr)"/>
+  <text x="20" y="48" fill="#F0DFB0" font-family="Georgia, serif" font-size="22" font-weight="600">Naren Cafe</text>
+  <text x="20" y="72" fill="rgba(240,223,176,0.7)" font-family="Arial, sans-serif" font-size="12">Billing � GST ready</text>
+  <rect x="300" y="38" width="70" height="28" rx="14" fill="rgba(201,168,76,0.2)" stroke="rgba(201,168,76,0.45)"/>
+  <text x="335" y="56" text-anchor="middle" fill="#E4C872" font-family="Arial, sans-serif" font-size="11" font-weight="700">Live</text>
+
+  <text x="20" y="128" fill="#0C1F33" font-family="Georgia, serif" font-size="20" font-weight="600">Menu</text>
+  <text x="330" y="128" fill="#5A6B7A" font-family="Arial, sans-serif" font-size="12">8 / 8</text>
+
+  <rect x="20" y="142" width="350" height="40" rx="12" fill="#fff" stroke="#E2E8F0"/>
+  <text x="36" y="167" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">Search item or ID�</text>
+
+  <g font-family="Arial, sans-serif">
+    <rect x="20" y="198" width="72" height="28" rx="14" fill="#0C1F33"/>
+    <text x="56" y="216" text-anchor="middle" fill="#F0DFB0" font-size="11" font-weight="600">Name</text>
+    <rect x="100" y="198" width="72" height="28" rx="14" fill="#fff" stroke="#E2E8F0"/>
+    <text x="136" y="216" text-anchor="middle" fill="#5A6B7A" font-size="11">Price</text>
+    <rect x="180" y="198" width="90" height="28" rx="14" fill="#fff" stroke="#E2E8F0"/>
+    <text x="225" y="216" text-anchor="middle" fill="#5A6B7A" font-size="11">Category</text>
+  </g>
+
+  <g font-family="Arial, sans-serif">
+    <rect x="20" y="244" width="165" height="88" rx="14" fill="#fff" stroke="rgba(201,168,76,0.25)"/>
+    <text x="34" y="270" fill="#94A3B8" font-size="10" letter-spacing="1">BEVERAGES</text>
+    <text x="34" y="294" fill="#0C1F33" font-family="Georgia, serif" font-size="18" font-weight="600">Coffee</text>
+    <text x="34" y="318" fill="#9A7B2F" font-size="14" font-weight="700">?60</text>
+
+    <rect x="205" y="244" width="165" height="88" rx="14" fill="#fff" stroke="rgba(201,168,76,0.25)"/>
+    <text x="219" y="270" fill="#94A3B8" font-size="10" letter-spacing="1">FOOD</text>
+    <text x="219" y="294" fill="#0C1F33" font-family="Georgia, serif" font-size="18" font-weight="600">Sandwich</text>
+    <text x="219" y="318" fill="#9A7B2F" font-size="14" font-weight="700">?120</text>
+
+    <rect x="20" y="344" width="165" height="88" rx="14" fill="#fff" stroke="rgba(201,168,76,0.25)"/>
+    <text x="34" y="370" fill="#94A3B8" font-size="10" letter-spacing="1">BEVERAGES</text>
+    <text x="34" y="394" fill="#0C1F33" font-family="Georgia, serif" font-size="18" font-weight="600">Masala Tea</text>
+    <text x="34" y="418" fill="#9A7B2F" font-size="14" font-weight="700">?40</text>
+
+    <rect x="205" y="344" width="165" height="88" rx="14" fill="#fff" stroke="rgba(201,168,76,0.25)"/>
+    <text x="219" y="370" fill="#94A3B8" font-size="10" letter-spacing="1">BAKERY</text>
+    <text x="219" y="394" fill="#0C1F33" font-family="Georgia, serif" font-size="18" font-weight="600">Muffin</text>
+    <text x="219" y="418" fill="#9A7B2F" font-size="14" font-weight="700">?55</text>
+
+    <rect x="20" y="444" width="165" height="88" rx="14" fill="#fff" stroke="rgba(201,168,76,0.25)"/>
+    <text x="34" y="470" fill="#94A3B8" font-size="10" letter-spacing="1">FOOD</text>
+    <text x="34" y="494" fill="#0C1F33" font-family="Georgia, serif" font-size="18" font-weight="600">Pasta</text>
+    <text x="34" y="518" fill="#9A7B2F" font-size="14" font-weight="700">?160</text>
+
+    <rect x="205" y="444" width="165" height="88" rx="14" fill="#fff" stroke="rgba(201,168,76,0.25)"/>
+    <text x="219" y="470" fill="#94A3B8" font-size="10" letter-spacing="1">DESSERT</text>
+    <text x="219" y="494" fill="#0C1F33" font-family="Georgia, serif" font-size="18" font-weight="600">Brownie</text>
+    <text x="219" y="518" fill="#9A7B2F" font-size="14" font-weight="700">?70</text>
+  </g>
+
+  <rect y="740" width="390" height="104" fill="#0C1F33"/>
+  <circle cx="48" cy="792" r="24" fill="#16324A"/>
+  <path d="M36 786h4l2-8h16l3 12h-18" fill="none" stroke="#F0DFB0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="42" cy="802" r="2" fill="#F0DFB0"/>
+  <circle cx="54" cy="802" r="2" fill="#F0DFB0"/>
+  <circle cx="62" cy="774" r="10" fill="#C9A84C"/>
+  <text x="62" y="778" text-anchor="middle" fill="#1A1408" font-family="Arial, sans-serif" font-size="10" font-weight="700">3</text>
+  <text x="92" y="786" fill="rgba(240,223,176,0.65)" font-family="Arial, sans-serif" font-size="11">TOTAL</text>
+  <text x="92" y="810" fill="#F0DFB0" font-family="Georgia, serif" font-size="22" font-weight="600">?246.75</text>
+  <rect x="230" y="768" width="140" height="48" rx="24" fill="url(#cta)"/>
+  <text x="300" y="798" text-anchor="middle" fill="#1A1408" font-family="Arial, sans-serif" font-size="14" font-weight="700">Checkout</text>
+</svg>

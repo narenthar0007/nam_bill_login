@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-label="NAM bill Inventory screen">
+  <defs>
+    <linearGradient id="hdr3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0C1F33"/>
+      <stop offset="100%" stop-color="#16324A"/>
+    </linearGradient>
+    <linearGradient id="gold3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F0DFB0"/>
+      <stop offset="100%" stop-color="#C9A84C"/>
+    </linearGradient>
+  </defs>
+  <rect width="390" height="844" fill="#F5F5F0"/>
+  <rect width="390" height="96" fill="url(#hdr3)"/>
+  <text x="20" y="48" fill="#F0DFB0" font-family="Georgia, serif" font-size="22" font-weight="600">Add Items</text>
+  <text x="20" y="72" fill="rgba(240,223,176,0.7)" font-family="Arial, sans-serif" font-size="12">Inventory · Variants &amp; add-ons</text>
+
+  <rect x="20" y="118" width="350" height="200" rx="18" fill="#fff" stroke="rgba(201,168,76,0.25)"/>
+  <text x="36" y="148" fill="#5A6B7A" font-family="Arial, sans-serif" font-size="11" letter-spacing="1">ITEM NAME</text>
+  <text x="36" y="172" fill="#0C1F33" font-family="Georgia, serif" font-size="20" font-weight="600">Cappuccino</text>
+  <text x="36" y="210" fill="#5A6B7A" font-family="Arial, sans-serif" font-size="11" letter-spacing="1">BASE PRICE</text>
+  <text x="36" y="234" fill="#9A7B2F" font-family="Georgia, serif" font-size="22" font-weight="600">₹80</text>
+  <text x="36" y="272" fill="#5A6B7A" font-family="Arial, sans-serif" font-size="11">Variants: Small · Medium · Large</text>
+  <text x="36" y="296" fill="#5A6B7A" font-family="Arial, sans-serif" font-size="11">Add-ons: Extra shot · Oat milk</text>
+
+  <rect x="20" y="338" width="168" height="44" rx="22" fill="url(#gold3)"/>
+  <text x="104" y="366" text-anchor="middle" fill="#1A1408" font-family="Arial, sans-serif" font-size="13" font-weight="700">Save Item</text>
+  <rect x="202" y="338" width="168" height="44" rx="22" fill="#fff" stroke="rgba(201,168,76,0.4)"/>
+  <text x="286" y="366" text-anchor="middle" fill="#9A7B2F" font-family="Arial, sans-serif" font-size="13" font-weight="700">Bulk Import</text>
+
+  <text x="20" y="420" fill="#0C1F33" font-family="Georgia, serif" font-size="18" font-weight="600">Saved items</text>
+
+  <g font-family="Arial, sans-serif">
+    <rect x="20" y="438" width="350" height="70" rx="14" fill="#fff" stroke="#E2E8F0"/>
+    <text x="36" y="468" fill="#0C1F33" font-family="Georgia, serif" font-size="16" font-weight="600">Coffee</text>
+    <text x="36" y="490" fill="#5A6B7A" font-size="12">3 variants · 2 add-ons</text>
+    <text x="340" y="475" text-anchor="end" fill="#9A7B2F" font-size="14" font-weight="700">₹60</text>
+
+    <rect x="20" y="522" width="350" height="70" rx="14" fill="#fff" stroke="#E2E8F0"/>
+    <text x="36" y="552" fill="#0C1F33" font-family="Georgia, serif" font-size="16" font-weight="600">Sandwich</text>
+    <text x="36" y="574" fill="#5A6B7A" font-size="12">2 variants · 1 add-on</text>
+    <text x="340" y="559" text-anchor="end" fill="#9A7B2F" font-size="14" font-weight="700">₹120</text>
+
+    <rect x="20" y="606" width="350" height="70" rx="14" fill="#fff" stroke="#E2E8F0"/>
+    <text x="36" y="636" fill="#0C1F33" font-family="Georgia, serif" font-size="16" font-weight="600">Masala Tea</text>
+    <text x="36" y="658" fill="#5A6B7A" font-size="12">Plain item</text>
+    <text x="340" y="643" text-anchor="end" fill="#9A7B2F" font-size="14" font-weight="700">₹40</text>
+  </g>
+
+  <rect y="780" width="390" height="64" fill="#fff" stroke="#E8EEF2"/>
+  <text x="65" y="818" text-anchor="middle" fill="#9A7B2F" font-family="Arial, sans-serif" font-size="11" font-weight="700">Items</text>
+  <text x="195" y="818" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="11">Billing</text>
+  <text x="325" y="818" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="11">History</text>
+</svg>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NAM bill — Login</title>
+  <meta name="theme-color" content="#0F766E" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #F0FDFA;
+      --surface: #fff;
+      --text: #134E4A;
+      --muted: #4B6B67;
+      --border: #D5E8E4;
+      --primary: #0F766E;
+      --primary-dark: #0B5C56;
+      --danger: #B42318;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Fira Sans", Inter, Arial, sans-serif;
+      background: linear-gradient(165deg, #042F2E 0%, #0F766E 42%, #F0FDFA 42%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 18px 50px rgba(4, 47, 46, 0.16);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .brand img { width: 42px; height: 42px; border-radius: 10px; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    .lead { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+    label { display: block; font-size: 12px; font-weight: 700; margin: 12px 0 6px; }
+    input {
+      width: 100%;
+      border: 1px solid #D9E0E8;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 15px;
+    }
+    input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    .mono { font-family: "Fira Code", ui-monospace, monospace; letter-spacing: 1px; }
+    .btn {
+      width: 100%;
+      margin-top: 18px;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #EEF2F7; color: #344054; margin-top: 10px; }
+    .error, .ok, .warn { display: none; margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.45; }
+    .error.show { display: block; background: #FEE4E2; color: var(--danger); }
+    .ok.show { display: block; background: #DCFAE6; color: #067647; }
+    .warn.show { display: block; background: #FFF0D9; color: #B54708; }
+    .meta { font-size: 12px; color: var(--muted); margin-top: 16px; text-align: center; }
+    a { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">
+      <img src="../assets/nam-bill-logo.png" alt="" />
+      <strong>NAM bill</strong>
+    </div>
+    <h1>Shop login check</h1>
+    <p class="lead">Enter the same shop name and 20-character license key used in the app. This page reads your Google Sheet so expired or disabled accounts can be blocked, and new app downloads can be required.</p>
+    <form id="loginForm">
+      <label for="shopName">Shop / POS name</label>
+      <input id="shopName" required autocomplete="organization" placeholder="e.g. Riye Cafe" />
+      <label for="licenseKey">License key (20 characters)</label>
+      <input id="licenseKey" class="mono" required maxlength="20" placeholder="XXXXXXXXXXXXXXXXXXXX" />
+      <button class="btn" type="submit">Check license</button>
+    </form>
+    <div class="error" id="errorBox"></div>
+    <div class="ok" id="okBox"></div>
+    <div class="warn" id="warnBox"></div>
+    <a class="btn btn-secondary" id="downloadBtn" href="https://github.com/narenthar0007/mahi/releases" style="display:none;text-decoration:none;text-align:center">Download latest app</a>
+    <p class="meta">Need a new key? Ask your provider. <a href="../admin/index.html">Admin</a></p>
+  </main>
+  <script src="../js/secureCrypto.js"></script>
+  <script src="./login.js"></script>
+</body>
+</html>
