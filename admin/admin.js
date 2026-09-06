@@ -8,8 +8,9 @@
   const CONTROL_SHOP = '__NAM_BILL_CONTROL__';
   const DEFAULT_SHEET_ID = '1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato';
   const DEFAULT_SHEET_GID = '0';
-  const DEFAULT_SHEETDB = 'https://sheetdb.io/api/v1/y019wjypdybot';
   const DEFAULT_SHEET_URL = `https://docs.google.com/spreadsheets/d/${DEFAULT_SHEET_ID}/edit?gid=${DEFAULT_SHEET_GID}#gid=${DEFAULT_SHEET_GID}`;
+  const DEFAULT_APPS_SCRIPT_URL =
+    'https://script.google.com/macros/s/AKfycbxjLrd4XB11GwxmntVLpOAWPENBDmmaq9L01OH7ek28yd-sbM8eP1-asZ3PdcgDhQuQeQ/exec';
   const ISSUE_LEN = 4;
   const EXPIRY_LEN = 4;
   const SIG_LEN = 12;
@@ -19,77 +20,44 @@
   const RENEWAL_LEN = 10;
   const RENEWAL_MS = 45 * 60 * 1000;
 
+  // Exact header order matching the live Google Sheet, plus Status / Login session / Remarks.
+  const SHEET_HEADER_ORDER = [
+    'Name',
+    'Mobile Number',
+    'Email ID',
+    'Date of payment',
+    'Date of login',
+    'Expire date',
+    'Payment mode',
+    'Amount',
+    'Login key',
+    'Shop name',
+    'User Code',
+    'Is Login',
+    'Status',
+    'Login session',
+    'Remarks',
+  ];
+
   const COLS = {
     name: 'Name',
     mobile: 'Mobile Number',
     email: 'Email ID',
-    shop: 'Shop name',
-    userCode: 'User Code',
     paymentDate: 'Date of payment',
     loginDate: 'Date of login',
     expireDate: 'Expire date',
     paymentMode: 'Payment mode',
     amount: 'Amount',
     loginKey: 'Login key',
-    status: 'Status',
-    remarks: 'Remarks',
+    shop: 'Shop name',
+    userCode: 'User Code',
     isLogin: 'Is Login',
+    status: 'Status',
     loginSession: 'Login session',
+    remarks: 'Remarks',
   };
 
-  const APPS_SCRIPT = `function doGet(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  const action = (e.parameter.action || 'list').toLowerCase();
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const values = sheet.getDataRange().getValues();
-  const rows = [];
-  for (let i = 1; i < values.length; i++) {
-    const row = {};
-    headers.forEach((h, idx) => { row[String(h)] = values[i][idx]; });
-    rows.push(row);
-  }
-  if (action === 'check') {
-    const shop = String(e.parameter.shop || '').trim().toLowerCase();
-    const found = rows.filter((r) => String(r['Shop name'] || '').trim().toLowerCase() === shop);
-    return json({ rows: found });
-  }
-  return json({ rows });
-}
-
-function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  const headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
-  const payload = JSON.parse(e.postData.contents || '{}');
-  const data = payload.data || payload;
-  return json(upsertRow_(sheet, headers, data));
-}
-
-function upsertRow_(sheet, headers, data) {
-  const values = sheet.getDataRange().getValues();
-  const shopName = String(data['Shop name'] || '').trim();
-  const mobile = String(data['Mobile Number'] || '').trim();
-  let rowIndex = -1;
-  const shopIdx = headers.indexOf('Shop name');
-  const mobileIdx = headers.indexOf('Mobile Number');
-  for (let i = 1; i < values.length; i++) {
-    const rowShop = shopIdx >= 0 ? String(values[i][shopIdx] || '').trim() : '';
-    const rowMobile = mobileIdx >= 0 ? String(values[i][mobileIdx] || '').trim() : '';
-    if ((shopName && rowShop === shopName) || (mobile && rowMobile === mobile)) {
-      rowIndex = i + 1;
-      break;
-    }
-  }
-  const line = headers.map((h) => data[h] != null ? data[h] : (rowIndex > 0 ? values[rowIndex - 1][headers.indexOf(h)] : ''));
-  if (rowIndex > 0) sheet.getRange(rowIndex, 1, 1, headers.length).setValues([line]);
-  else sheet.appendRow(line);
-  return { ok: true };
-}
-
-function json(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}`;
-
+  const APPS_SCRIPT = "/**\n * NAM bill — Google Sheet write API\n *\n * HOW TO DEPLOY (important — fixes \"fetch failed\"):\n * 1. In the spreadsheet: Extensions → Apps Script\n * 2. Delete old code, paste THIS entire file, Save (Ctrl+S)\n * 3. Deploy → New deployment → Type: Web app\n * 4. Description: nam-bill\n * 5. Execute as: Me\n * 6. Who has access: Anyone   ← MUST be Anyone (not \"Only myself\")\n * 7. Deploy → Authorize → copy the Web app URL (.../exec)\n * 8. Paste that URL in admin Settings → Google Apps Script URL → Save\n *\n * If you change code later: Deploy → Manage deployments → Edit (pencil)\n * → Version: New version → Deploy\n *\n * Sheet:\n * https://docs.google.com/spreadsheets/d/1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato/edit?gid=0#gid=0\n *\n * Headers (row 1):\n * Name, Mobile Number, Email ID, Date of payment, Date of login, Expire date,\n * Payment mode, Amount, Login key, Shop name, User Code, Is Login,\n * Status, Login session, Remarks\n */\n\nvar REQUIRED_HEADERS = [\n  'Name',\n  'Mobile Number',\n  'Email ID',\n  'Date of payment',\n  'Date of login',\n  'Expire date',\n  'Payment mode',\n  'Amount',\n  'Login key',\n  'Shop name',\n  'User Code',\n  'Is Login',\n  'Status',\n  'Login session',\n  'Remarks',\n];\n\nfunction ensureHeaders_(sheet) {\n  var lastCol = Math.max(sheet.getLastColumn(), 1);\n  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) {\n    return String(h || '').trim();\n  });\n  var changed = false;\n  REQUIRED_HEADERS.forEach(function (h) {\n    if (headers.indexOf(h) === -1) {\n      headers.push(h);\n      changed = true;\n    }\n  });\n  if (changed) {\n    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\n  }\n  return headers;\n}\n\nfunction doGet(e) {\n  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];\n  var headers = ensureHeaders_(sheet);\n  var action = String((e && e.parameter && e.parameter.action) || 'list').toLowerCase();\n  var values = sheet.getDataRange().getValues();\n  var rows = [];\n  for (var i = 1; i < values.length; i++) {\n    var row = {};\n    headers.forEach(function (h, idx) {\n      row[String(h)] = values[i][idx];\n    });\n    rows.push(row);\n  }\n\n  if (action === 'check') {\n    var shop = String((e.parameter && e.parameter.shop) || '').trim().toLowerCase();\n    var key = String((e.parameter && e.parameter.key) || '').trim().toUpperCase();\n    var found = rows.filter(function (r) {\n      var rowShop = String(r['Shop name'] || '').trim().toLowerCase();\n      var rowKey = String(r['Login key'] || r['Login Key'] || '').trim().toUpperCase();\n      if (shop && key) return rowShop === shop && rowKey === key;\n      if (shop) return rowShop === shop;\n      if (key) return rowKey === key;\n      return false;\n    });\n    return json_({ rows: found, ok: true });\n  }\n\n  return json_({ rows: rows, ok: true });\n}\n\nfunction doPost(e) {\n  try {\n    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];\n    var headers = ensureHeaders_(sheet);\n    var raw = (e && e.postData && e.postData.contents) || '{}';\n    var payload = JSON.parse(raw);\n    var data = payload.data || payload;\n    var action = String(payload.action || '').toLowerCase();\n    if (action === 'loginstate') {\n      return json_(patchLoginState_(sheet, headers, data));\n    }\n    return json_(upsertRow_(sheet, headers, data));\n  } catch (err) {\n    return json_({ ok: false, error: String(err && err.message ? err.message : err) });\n  }\n}\n\nfunction upsertRow_(sheet, headers, data) {\n  var values = sheet.getDataRange().getValues();\n  var shopName = String(data['Shop name'] || '').trim();\n  var mobile = String(data['Mobile Number'] || '').trim();\n  var loginKey = String(data['Login key'] || data['Login Key'] || '').trim().toUpperCase();\n  var rowIndex = -1;\n  var shopIdx = headers.indexOf('Shop name');\n  var mobileIdx = headers.indexOf('Mobile Number');\n  var keyIdx = Math.max(headers.indexOf('Login key'), headers.indexOf('Login Key'));\n  for (var i = 1; i < values.length; i++) {\n    var rowShop = shopIdx >= 0 ? String(values[i][shopIdx] || '').trim() : '';\n    var rowMobile = mobileIdx >= 0 ? String(values[i][mobileIdx] || '').trim() : '';\n    var rowKey = keyIdx >= 0 ? String(values[i][keyIdx] || '').trim().toUpperCase() : '';\n    if ((shopName && rowShop === shopName) || (mobile && rowMobile === mobile) || (loginKey && rowKey === loginKey)) {\n      rowIndex = i + 1;\n      break;\n    }\n  }\n  var line = headers.map(function (h, idx) {\n    if (Object.prototype.hasOwnProperty.call(data, h)) return data[h];\n    return rowIndex > 0 ? values[rowIndex - 1][idx] : '';\n  });\n  if (rowIndex > 0) {\n    sheet.getRange(rowIndex, 1, 1, headers.length).setValues([line]);\n  } else {\n    sheet.appendRow(line);\n  }\n  return { ok: true };\n}\n\nfunction patchLoginState_(sheet, headers, data) {\n  var values = sheet.getDataRange().getValues();\n  var shopName = String(data['Shop name'] || '').trim().toLowerCase();\n  var loginKey = String(data['Login key'] || data['Login Key'] || '').trim().toUpperCase();\n  var shopIdx = headers.indexOf('Shop name');\n  var keyIdx = Math.max(headers.indexOf('Login key'), headers.indexOf('Login Key'));\n  var rowIndex = -1;\n  for (var i = 1; i < values.length; i++) {\n    var rowShop = shopIdx >= 0 ? String(values[i][shopIdx] || '').trim().toLowerCase() : '';\n    var rowKey = keyIdx >= 0 ? String(values[i][keyIdx] || '').trim().toUpperCase() : '';\n    if (\n      (shopName && loginKey && rowShop === shopName && rowKey === loginKey) ||\n      (shopName && !loginKey && rowShop === shopName) ||\n      (loginKey && !shopName && rowKey === loginKey)\n    ) {\n      rowIndex = i + 1;\n      break;\n    }\n  }\n  if (rowIndex < 0) return { ok: false, error: 'Row not found' };\n  var line = values[rowIndex - 1].slice();\n  while (line.length < headers.length) line.push('');\n  headers.forEach(function (h, idx) {\n    if (Object.prototype.hasOwnProperty.call(data, h)) line[idx] = data[h];\n  });\n  sheet.getRange(rowIndex, 1, 1, headers.length).setValues([line]);\n  return { ok: true };\n}\n\nfunction json_(obj) {\n  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);\n}\n";
   let customers = [];
   let selectedDays = 90;
   let useCustom = false;
@@ -116,8 +84,7 @@ function json(obj) {
   function defaultSettings() {
     return {
       googleSheetUrl: DEFAULT_SHEET_URL,
-      sheetdbUrl: DEFAULT_SHEETDB,
-      appsScriptUrl: '',
+      appsScriptUrl: DEFAULT_APPS_SCRIPT_URL,
       minAppVersion: '1.0.0',
       latestAppVersion: '1.0.0',
       downloadUrl: 'https://github.com/narenthar0007/mahi/releases',
@@ -144,12 +111,10 @@ function json(obj) {
   function connectDefaultSheet() {
     const current = loadSettings();
     const id = extractSheetId(current.googleSheetUrl);
-    if (!id || id === DEFAULT_SHEET_ID) {
-      saveSettings({
-        googleSheetUrl: DEFAULT_SHEET_URL,
-        sheetdbUrl: current.sheetdbUrl || DEFAULT_SHEETDB,
-      });
-    }
+    saveSettings({
+      googleSheetUrl: (!id || id === DEFAULT_SHEET_ID) ? DEFAULT_SHEET_URL : current.googleSheetUrl,
+      sheetdbUrl: '', // SheetDB disabled — use Google Sheet + Apps Script only
+    });
   }
 
   function toast(message) {
@@ -332,8 +297,26 @@ function json(obj) {
 
   async function fetchJson(url, options) {
     const res = await fetch(url, options);
-    if (!res.ok) throw new Error(`Request failed (${res.status})`);
-    return res.json();
+    if (!res.ok) {
+      let detail = '';
+      try {
+        const body = await res.text();
+        detail = body ? `: ${body.slice(0, 180)}` : '';
+      } catch {
+        // ignore
+      }
+      if (res.status === 429) {
+        throw new Error('Too many requests (429). Wait a minute and try again.');
+      }
+      throw new Error(`Request failed (${res.status})${detail}`);
+    }
+    const text = await res.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: true, raw: text };
+    }
   }
 
   function httpsUrl(url) {
@@ -344,6 +327,14 @@ function json(obj) {
     const settings = { ...defaultSettings(), ...loadSettings() };
     const sheetId = extractSheetId(settings.googleSheetUrl) || DEFAULT_SHEET_ID;
     const errors = [];
+
+    // Direct Google Sheet read (no SheetDB).
+    try {
+      const rows = await loadGviz(sheetId);
+      if (rows.length) return rows.map((row) => Secure.decryptCustomerRow(row));
+    } catch (err) {
+      errors.push(err.message);
+    }
 
     if (settings.appsScriptUrl) {
       try {
@@ -357,22 +348,7 @@ function json(obj) {
       }
     }
 
-    if (settings.sheetdbUrl) {
-      try {
-        const data = await fetchJson(httpsUrl(settings.sheetdbUrl.replace(/\/$/, '')));
-        if (Array.isArray(data)) return data.map((row) => Secure.decryptCustomerRow(row));
-      } catch (err) {
-        errors.push(err.message);
-      }
-    }
-
-    try {
-      const rows = await loadGviz(sheetId);
-      return rows.map((row) => Secure.decryptCustomerRow(row));
-    } catch (err) {
-      errors.push(err.message);
-      throw new Error(errors.filter(Boolean).join(' ') || 'Could not load Google Sheet.');
-    }
+    throw new Error(errors.filter(Boolean).join(' ') || 'Could not load Google Sheet. Share it as Anyone with the link can view.');
   }
 
   function customerPayloadFromForm(loginKey, expireDate) {
@@ -400,52 +376,66 @@ function json(obj) {
     return needed.filter((key) => !String(payload[key] || '').trim());
   }
 
-  async function saveRow(payload) {
-    const settings = { ...defaultSettings(), ...loadSettings() };
-    const plain = Secure.encryptCustomerRow(payload);
-    const shop = payload[COLS.shop];
-    const mobile = payload[COLS.mobile];
-    const loginKey = payload[COLS.loginKey];
-
-    if (settings.sheetdbUrl) {
-      const base = httpsUrl(settings.sheetdbUrl.replace(/\/$/, ''));
-      const existing = existingRecord || customers.find((row) => {
-        const sameShop = shop && field(row, COLS.shop).toLowerCase() === shop.toLowerCase();
-        const sameMobile = mobile && field(row, COLS.mobile) === mobile;
-        return sameShop || sameMobile;
-      });
-      if (existing) {
-        const path = shop
-          ? `${encodeURIComponent(COLS.shop)}/${encodeURIComponent(shop)}`
-          : mobile
-            ? `${encodeURIComponent(COLS.mobile)}/${encodeURIComponent(mobile)}`
-            : `${encodeURIComponent(COLS.loginKey)}/${encodeURIComponent(loginKey)}`;
-        await fetchJson(`${base}/${path}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: plain }),
-        });
-        return;
+  function sheetRowPayload(payload) {
+    const base = {};
+    SHEET_HEADER_ORDER.forEach((key) => {
+      if (payload[key] != null && String(payload[key]).trim() !== '') {
+        base[key] = payload[key];
+      } else if (key === COLS.isLogin) {
+        base[key] = payload[key] != null ? payload[key] : 'FALSE';
+      } else if (key === COLS.status) {
+        base[key] = payload[key] || 'Active';
+      } else if (key === COLS.loginSession) {
+        base[key] = payload[key] != null ? payload[key] : '';
+      } else if (payload[key] != null) {
+        base[key] = payload[key];
+      } else {
+        base[key] = '';
       }
-      await fetchJson(base, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: plain }),
-      });
-      return;
-    }
+    });
+    return Secure.encryptCustomerRow(base);
+  }
 
-    if (settings.appsScriptUrl) {
-      const res = await fetch(httpsUrl(settings.appsScriptUrl), {
+  async function saveViaAppsScript(appsScriptUrl, plain) {
+    let res;
+    try {
+      res = await fetch(httpsUrl(appsScriptUrl), {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ data: plain }),
+        redirect: 'follow',
       });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      return;
+    } catch (err) {
+      throw new Error(
+        `Fetch failed: ${err.message || err}. Redeploy Apps Script with Who has access = Anyone, then paste the new /exec URL.`
+      );
     }
+    const text = await res.text();
+    if (/accounts\.google\.com|Sign in|signin/i.test(text) || res.status === 401) {
+      throw new Error(
+        'Apps Script is locked (Google login page). Open Deploy → Manage deployments → Edit → Who has access: Anyone → New version → Deploy. Then save the URL again in Settings.'
+      );
+    }
+    if (!res.ok) throw new Error(`Apps Script request failed (${res.status}): ${text.slice(0, 120)}`);
+    try {
+      const json = JSON.parse(text);
+      if (json && json.ok === false) throw new Error(json.error || 'Apps Script returned ok:false');
+    } catch (err) {
+      if (/Apps Script|ok:false/.test(String(err.message || ''))) throw err;
+      // Non-JSON success bodies from older redirects are ignored if HTTP ok
+    }
+  }
 
-    throw new Error('Add a SheetDB API URL or Apps Script URL in Settings so rows can be saved.');
+  async function saveRow(payload) {
+    const settings = { ...defaultSettings(), ...loadSettings() };
+    const plain = sheetRowPayload(payload);
+    const appsScriptUrl = String(settings.appsScriptUrl || '').trim();
+    if (!appsScriptUrl) {
+      throw new Error(
+        'Paste your Google Apps Script web app URL in Settings to save keys directly to Google Sheets.'
+      );
+    }
+    await saveViaAppsScript(appsScriptUrl, plain);
   }
 
   function showPage(name) {
@@ -457,14 +447,12 @@ function json(obj) {
     });
     const titles = {
       dashboard: 'Dashboard',
-      customers: 'Customers',
       generate: 'Generate Key',
       api: 'API Keys',
       reports: 'Reports',
       settings: 'Settings',
     };
     $('pageTitle').textContent = titles[name] || name;
-    if (name === 'customers') renderCustomers();
     if (name === 'dashboard') updateStats();
   }
 
@@ -494,47 +482,7 @@ function json(obj) {
   }
 
   function renderCustomers() {
-    const search = ($('customerSearch').value || '').toLowerCase();
-    const status = $('customerStatusFilter').value;
-    const tbody = $('customerTable');
-    const filtered = visibleCustomers().filter((row) => {
-      const blob = [field(row, COLS.name), field(row, COLS.shop), field(row, COLS.mobile), field(row, COLS.loginKey)].join(' ').toLowerCase();
-      const matchesSearch = !search || blob.includes(search);
-      let matchesStatus = true;
-      if (status === 'Expired') matchesStatus = isExpired(row);
-      else if (status) matchesStatus = (field(row, COLS.status) || 'Active') === status;
-      return matchesSearch && matchesStatus;
-    });
-
-    if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="11" class="empty">No customers yet. Paste your Google Sheet URL in Settings and sync, or generate a key.</td></tr>';
-      updateStats();
-      return;
-    }
-
-    tbody.innerHTML = filtered.map((row) => {
-      const index = customers.indexOf(row);
-      const status = field(row, COLS.status) || 'Active';
-      const toggleLabel = status === 'Disabled' ? 'Enable' : 'Disable';
-      const loggedIn = /^(true|yes|1|y)$/i.test(field(row, COLS.isLogin) || field(row, 'Is Login id'));
-      return `<tr>
-        <td>${escapeHtml(field(row, COLS.name) || '-')}</td>
-        <td>${escapeHtml(field(row, COLS.shop) || '-')}</td>
-        <td>${escapeHtml(field(row, COLS.mobile) || '-')}</td>
-        <td>${escapeHtml(field(row, COLS.email) || '-')}</td>
-        <td class="mono">${escapeHtml(field(row, COLS.loginKey) || '-')}</td>
-        <td>${escapeHtml(field(row, COLS.expireDate) || '-')}</td>
-        <td>${escapeHtml(field(row, COLS.paymentMode) || '-')}</td>
-        <td>${escapeHtml(field(row, COLS.amount) || '-')}</td>
-        <td>${statusBadge(row)}</td>
-        <td>${loggedIn ? '<span class="badge badge-green">TRUE</span>' : '<span class="badge badge-gray">FALSE</span>'}</td>
-        <td>
-          <button class="btn btn-blue" type="button" data-edit="${index}">Edit</button>
-          <button class="btn btn-danger" type="button" data-toggle="${index}">${toggleLabel}</button>
-        </td>
-      </tr>`;
-    }).join('');
-    updateStats();
+    // Customers page removed — keep as no-op so sync/stats stay safe.
   }
 
   function escapeHtml(value) {
@@ -548,7 +496,6 @@ function json(obj) {
   function fillSettingsForm() {
     const s = { ...defaultSettings(), ...loadSettings() };
     $('googleSheetUrl').value = s.googleSheetUrl || '';
-    $('sheetdbUrl').value = s.sheetdbUrl || '';
     $('appsScriptUrl').value = s.appsScriptUrl || '';
     $('minAppVersion').value = s.minAppVersion || '1.0.0';
     $('latestAppVersion').value = s.latestAppVersion || '1.0.0';
@@ -594,20 +541,8 @@ function json(obj) {
     $('customDate').value = formatDateInput(addDays(90));
   }
 
-  function openCustomerModal(index) {
-    const row = index == null ? null : customers[index];
-    $('editIndex').value = index == null ? '' : String(index);
-    $('customerModalTitle').textContent = row ? 'Edit customer' : 'Add customer';
-    $('editName').value = row ? field(row, COLS.name) : '';
-    $('editMobile').value = row ? field(row, COLS.mobile) : '';
-    $('editEmail').value = row ? field(row, COLS.email) : '';
-    $('editShop').value = row ? field(row, COLS.shop) : '';
-    $('editExpire').value = row ? formatDateInput(parseDate(field(row, COLS.expireDate)) || new Date()) : todayStr();
-    $('editStatus').value = row ? (field(row, COLS.status) || 'Active') : 'Active';
-    $('editKey').value = row ? field(row, COLS.loginKey) : '';
-    $('editAmount').value = row ? field(row, COLS.amount) : '';
-    $('editRemarks').value = row ? field(row, COLS.remarks) : '';
-    $('customerModal').classList.add('show');
+  function openCustomerModal() {
+    // Customers page removed.
   }
 
   function controlPayload() {
@@ -644,7 +579,7 @@ function json(obj) {
       toast('No data to export');
       return;
     }
-    const headers = Object.keys(COLS).map((k) => COLS[k]);
+    const headers = SHEET_HEADER_ORDER;
     const lines = [headers.join(',')];
     rows.forEach((row) => {
       lines.push(headers.map((h) => `"${String(field(row, h)).replace(/"/g, '""')}"`).join(','));
@@ -685,70 +620,9 @@ function json(obj) {
 
   $('syncNowBtn').addEventListener('click', syncSheet);
   $('dashSyncBtn').addEventListener('click', syncSheet);
-  $('customerSearch').addEventListener('input', renderCustomers);
-  $('customerStatusFilter').addEventListener('change', renderCustomers);
-  $('addCustomerBtn').addEventListener('click', () => openCustomerModal(null));
-
-  $('customerTable').addEventListener('click', async (e) => {
-    const edit = e.target.closest('[data-edit]');
-    const toggle = e.target.closest('[data-toggle]');
-    if (edit) openCustomerModal(Number(edit.dataset.edit));
-    if (toggle) {
-      const index = Number(toggle.dataset.toggle);
-      const row = customers[index];
-      if (!row) return;
-      const current = field(row, COLS.status) || 'Active';
-      const next = current === 'Disabled' ? 'Active' : 'Disabled';
-      const payload = { ...row, [COLS.status]: next };
-      try {
-        existingRecord = row;
-        await saveRow(payload);
-        customers[index] = payload;
-        renderCustomers();
-        toast(next === 'Disabled' ? 'Account disabled' : 'Account enabled');
-      } catch (err) {
-        toast(err.message);
-      }
-    }
-  });
 
   document.querySelectorAll('[data-close]').forEach((btn) => {
     btn.addEventListener('click', () => $(btn.dataset.close).classList.remove('show'));
-  });
-
-  $('saveCustomerBtn').addEventListener('click', async () => {
-    const index = $('editIndex').value;
-    const current = index === '' ? {} : { ...customers[Number(index)] };
-    const payload = {
-      ...current,
-      [COLS.name]: $('editName').value.trim(),
-      [COLS.mobile]: $('editMobile').value.trim(),
-      [COLS.email]: $('editEmail').value.trim(),
-      [COLS.shop]: $('editShop').value.trim(),
-      [COLS.expireDate]: $('editExpire').value,
-      [COLS.status]: $('editStatus').value,
-      [COLS.loginKey]: $('editKey').value.trim(),
-      [COLS.amount]: $('editAmount').value.trim(),
-      [COLS.remarks]: $('editRemarks').value.trim(),
-      [COLS.paymentDate]: current[COLS.paymentDate] || todayStr(),
-      [COLS.loginDate]: current[COLS.loginDate] || todayStr(),
-      [COLS.paymentMode]: current[COLS.paymentMode] || 'UPI',
-    };
-    if (!payload[COLS.name] || !payload[COLS.mobile] || !payload[COLS.shop]) {
-      toast('Name, mobile, and shop are required');
-      return;
-    }
-    try {
-      existingRecord = index === '' ? null : customers[Number(index)];
-      await saveRow(payload);
-      if (index === '') customers.push(payload);
-      else customers[Number(index)] = payload;
-      $('customerModal').classList.remove('show');
-      renderCustomers();
-      toast('Customer saved');
-    } catch (err) {
-      toast(err.message);
-    }
   });
 
   $('periodGrid').addEventListener('click', (e) => {
@@ -775,11 +649,16 @@ function json(obj) {
     const err = $('generateError');
     err.classList.remove('show');
     const shop = $('custShop').value.trim();
-    const renewal = validateRenewalCode($('renewalCode').value, shop);
-    if (!renewal.valid) {
-      err.textContent = renewal.error;
-      err.classList.add('show');
-      return;
+    const renewalInput = ($('renewalCode').value || '').replace(/\D/g, '');
+    // Renewal is only required for renewals; new customers can generate without it.
+    if (renewalInput) {
+      const renewal = validateRenewalCode(renewalInput, shop);
+      if (!renewal.valid) {
+        err.textContent = renewal.error;
+        err.classList.add('show');
+        return;
+      }
+      if (!$('custUserCode').value.trim()) $('custUserCode').value = renewalInput;
     }
     let expiryDate;
     if (useCustom) {
@@ -808,15 +687,27 @@ function json(obj) {
       return;
     }
     try {
-      existingRecord = customers.find((row) => field(row, COLS.shop).toLowerCase() === shop.toLowerCase()) || null;
+      existingRecord = customers.find((row) => field(row, COLS.shop).toLowerCase() === shop.toLowerCase())
+        || customers.find((row) => field(row, COLS.mobile) === payload[COLS.mobile])
+        || null;
       await saveRow(payload);
+      if (existingRecord) {
+        const idx = customers.indexOf(existingRecord);
+        if (idx >= 0) customers[idx] = { ...existingRecord, ...payload };
+        else customers.push(payload);
+      } else {
+        customers.push(payload);
+      }
+      updateStats();
       const result = $('generateResult');
       result.style.display = 'flex';
       result.className = 'sheet-status';
-      result.innerHTML = `<div><strong>Key saved to Google Sheet</strong><br><span class="mono">${key}</span><br>Valid until ${expiryDate.toLocaleDateString('en-IN')}</div>`;
-      await syncSheet();
+      result.innerHTML = `<div><strong>Key saved to Google Sheet</strong><br><span class="mono">${escapeHtml(key)}</span><br>Valid until ${expiryDate.toLocaleDateString('en-IN')}</div>`;
+      toast('License key generated');
+      // Refresh sheet quietly; stay on Generate Key (do not open Customers).
+      syncSheet().catch(() => {});
     } catch (ex) {
-      err.textContent = ex.message;
+      err.textContent = ex.message || 'Could not save key to Google Sheet.';
       err.classList.add('show');
     }
   });
@@ -864,7 +755,6 @@ function json(obj) {
       updateMessage: $('updateMessage').value.trim(),
       googleSheetId: extractSheetId($('googleSheetUrl').value) || DEFAULT_SHEET_ID,
       googleSheetUrl: $('googleSheetUrl').value.trim(),
-      sheetdbUrl: $('sheetdbUrl').value.trim(),
       appsScriptUrl: $('appsScriptUrl').value.trim(),
       requireSheetRecord: $('requireSheetRecord').value !== 'false',
       blockDisabledAccounts: true,
@@ -880,8 +770,8 @@ function json(obj) {
     try {
       saveSettings({
         googleSheetUrl: url.startsWith('http') ? Secure.assertHttpsUrl(url) : url,
-        sheetdbUrl: $('sheetdbUrl').value.trim() ? Secure.assertHttpsUrl($('sheetdbUrl').value.trim()) : '',
         appsScriptUrl: $('appsScriptUrl').value.trim() ? Secure.assertHttpsUrl($('appsScriptUrl').value.trim()) : '',
+        sheetdbUrl: '',
       });
     } catch (err) {
       toast(err.message);

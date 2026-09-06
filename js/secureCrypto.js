@@ -472,9 +472,10 @@ function assertHttpsUrl(url) {
 
 function encryptCustomerRow(row, options) {
   const next = decryptCustomerRow(row, options);
-  next[LOOKUP_COLUMNS.shop] = '';
-  next[LOOKUP_COLUMNS.mobile] = '';
-  next[LOOKUP_COLUMNS.key] = '';
+  // Keep sheet columns stable — never invent lookup columns on write.
+  delete next[LOOKUP_COLUMNS.shop];
+  delete next[LOOKUP_COLUMNS.mobile];
+  delete next[LOOKUP_COLUMNS.key];
   return next;
 }
 

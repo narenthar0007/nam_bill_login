@@ -393,7 +393,7 @@
   <div id="loginScreen" class="login-screen">
     <form class="login-card" id="adminLoginForm">
       <h1>NAM bill Admin</h1>
-      <p>Sign in to manage customers, license keys, Google Sheet sync, and app updates.</p>
+      <p>Sign in to generate license keys, sync Google Sheet, and control app updates.</p>
       <div class="form-group">
         <label for="authUser">Username</label>
         <input id="authUser" autocomplete="username" required />
@@ -417,10 +417,6 @@
         <li><button class="active" data-page="dashboard" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10l8-6 8 6v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9z"/><path d="M9 20v-6h6v6"/></svg>
           <span class="label">Dashboard</span>
-        </button></li>
-        <li><button data-page="customers" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span class="label">Customers</span>
         </button></li>
         <li><button data-page="generate" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -463,7 +459,6 @@
               <div class="panel-header"><div class="panel-title">Quick actions</div></div>
               <div class="quick-actions">
                 <button class="quick-action" type="button" data-page="generate"><strong>Generate license key</strong><span>Create a 20-character key and save it to the sheet</span></button>
-                <button class="quick-action" type="button" data-page="customers"><strong>View customers</strong><span>Search, disable, or export every licensed shop</span></button>
                 <button class="quick-action" type="button" id="syncNowBtn"><strong>Sync Google Sheet</strong><span>Load all generated keys from your sheet URL</span></button>
                 <button class="quick-action" type="button" data-page="settings"><strong>App update control</strong><span>Force shops to download a new NAM bill build</span></button>
               </div>
@@ -476,45 +471,12 @@
           </div>
         </section>
 
-        <section id="customers" class="page">
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Customers</div>
-                <div class="panel-sub">Every generated key stored in your Google Sheet. Disabling a row blocks app login.</div>
-              </div>
-              <button class="btn btn-primary" type="button" id="addCustomerBtn">Add customer</button>
-            </div>
-            <div class="filters">
-              <input id="customerSearch" placeholder="Search name, shop, mobile, or key..." />
-              <select id="customerStatusFilter">
-                <option value="">All status</option>
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Disabled</option>
-                <option>Expired</option>
-              </select>
-            </div>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th><th>Shop</th><th>Mobile</th><th>Email</th><th>Login key</th>
-                    <th>Expire date</th><th>Payment</th><th>Amount</th><th>Status</th><th>Logged in</th><th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="customerTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
         <section id="generate" class="page">
           <div class="panel">
             <div class="panel-header">
               <div>
                 <div class="panel-title">Generate license key</div>
-                <div class="panel-sub">Required fields are marked. Saving also writes the customer row to Google Sheets.</div>
+                <div class="panel-sub">Fill shop details, pick a period, then save the key straight to your Google Sheet.</div>
               </div>
             </div>
             <div class="form-grid" id="generateForm">
@@ -522,8 +484,8 @@
               <div class="form-group"><label>Mobile number <span class="req">*</span></label><input id="custMobile" maxlength="10" inputmode="numeric" /></div>
               <div class="form-group"><label>Email ID</label><input id="custEmail" type="email" /></div>
               <div class="form-group"><label>Shop name <span class="req">*</span></label><input id="custShop" placeholder="Must match app login" /></div>
-              <div class="form-group"><label>User / renewal code</label><input id="custUserCode" maxlength="10" inputmode="numeric" placeholder="10 digits from app" /></div>
-              <div class="form-group"><label>10-digit renewal code <span class="req">*</span></label><input id="renewalCode" maxlength="10" inputmode="numeric" /></div>
+              <div class="form-group"><label>User / renewal code</label><input id="custUserCode" maxlength="10" inputmode="numeric" placeholder="Optional for new customers" /></div>
+              <div class="form-group"><label>10-digit renewal code</label><input id="renewalCode" maxlength="10" inputmode="numeric" placeholder="Only for renewals" /></div>
               <div class="form-group"><label>Date of payment <span class="req">*</span></label><input id="custPaymentDate" type="date" /></div>
               <div class="form-group"><label>Date of login <span class="req">*</span></label><input id="custLoginDate" type="date" /></div>
               <div class="form-group"><label>Expire date <span class="req">*</span></label><input id="custExpireDate" type="date" /></div>
@@ -541,7 +503,7 @@
               <div class="form-group"><label>Login key</label><input id="custLoginKey" class="mono" readonly placeholder="Filled after generate" /></div>
               <div class="form-group full"><label>Remarks</label><input id="custRemarks" /></div>
             </div>
-            <p class="help" id="renewalHint" style="margin:12px 0">Renewal code must match the shop name the customer typed in the NAM bill login screen. Valid for 45 minutes.</p>
+            <p class="help" id="renewalHint" style="margin:12px 0">For renewals only: paste the 10-digit code from the app (valid 45 minutes, shop name must match). Leave blank when creating a new customer key.</p>
             <div class="panel-title" style="margin:8px 0 10px">License period</div>
             <div class="period-grid" id="periodGrid">
               <button type="button" class="period-btn" data-days="0">Current day</button>
@@ -617,16 +579,15 @@
                 <label>Google Sheet URL <span class="req">*</span></label>
                 <input id="googleSheetUrl" value="https://docs.google.com/spreadsheets/d/1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato/edit?gid=0#gid=0" placeholder="https://docs.google.com/spreadsheets/d/...." />
               </div>
-              <div class="form-group">
-                <label>SheetDB API URL (recommended for saving)</label>
-                <input id="sheetdbUrl" value="https://sheetdb.io/api/v1/y019wjypdybot" placeholder="https://sheetdb.io/api/v1/..." />
-              </div>
-              <div class="form-group">
-                <label>Google Apps Script URL (optional)</label>
-                <input id="appsScriptUrl" placeholder="https://script.google.com/macros/s/..." />
+              <div class="form-group full">
+                <label>Google Apps Script URL <span class="req">*</span> (required to save keys)</label>
+                <input id="appsScriptUrl" value="https://script.google.com/macros/s/AKfycbxjLrd4XB11GwxmntVLpOAWPENBDmmaq9L01OH7ek28yd-sbM8eP1-asZ3PdcgDhQuQeQ/exec" placeholder="https://script.google.com/macros/s/.../exec" />
               </div>
             </div>
-            <p class="help" style="margin:12px 0">Share the sheet as <strong>Anyone with the link can view</strong> so the NAM bill app can check login. Use SheetDB or Apps Script so this dashboard can add/update rows. Customer rows are stored as plain text.</p>
+            <p class="help" style="margin:12px 0">
+              Login and sync read your Google Sheet directly (share as <strong>Anyone with the link can view</strong>).
+              SheetDB is no longer used. To generate/save keys, deploy the Apps Script below and paste the web app URL here.
+            </p>
             <button class="btn btn-primary" type="button" id="saveSheetSettingsBtn">Save and sync sheet</button>
           </div>
 
@@ -644,18 +605,18 @@
                   <tr><td>Name</td><td>Yes</td><td>Customer name</td></tr>
                   <tr><td>Mobile Number</td><td>Yes</td><td>Unique contact / lookup</td></tr>
                   <tr><td>Email ID</td><td>No</td><td>Contact. Control row: APK / Play download URL</td></tr>
-                  <tr><td>Shop name</td><td>Yes</td><td>Must match app login. Control row: __NAM_BILL_CONTROL__</td></tr>
-                  <tr><td>User Code</td><td>No</td><td>Last renewal code</td></tr>
                   <tr><td>Date of payment</td><td>Yes</td><td>Billing record</td></tr>
                   <tr><td>Date of login</td><td>Yes</td><td>License issued date</td></tr>
                   <tr><td>Expire date</td><td>Yes</td><td>Remote expiry (blocks app even if key still decodes)</td></tr>
                   <tr><td>Payment mode</td><td>Yes</td><td>UPI / Cash / etc. Control row: Strict or Open</td></tr>
                   <tr><td>Amount</td><td>Yes</td><td>Fee. Control row: latest app version</td></tr>
                   <tr><td>Login key</td><td>Yes</td><td>20-character key. Control row: minimum app version</td></tr>
-                  <tr><td>Status</td><td>Yes</td><td>Active / Inactive / Disabled. Control row: ForceUpdate to block old apps</td></tr>
-                  <tr><td>Is Login</td><td>Yes</td><td>TRUE while the app is logged in. FALSE after logout. Blocks the same key on a second device</td></tr>
-                  <tr><td>Login session</td><td>Auto</td><td>Written by the app so a takeover can kick the previous device</td></tr>
-                  <tr><td>Remarks</td><td>No</td><td>Notes. Control row: update message shown in the app</td></tr>
+                  <tr><td>Shop name</td><td>Yes</td><td>Must match app login. Control row: __NAM_BILL_CONTROL__</td></tr>
+                  <tr><td>User Code</td><td>No</td><td>Last renewal code</td></tr>
+                  <tr><td>Is Login</td><td>Yes</td><td>TRUE while logged in. FALSE after logout</td></tr>
+                  <tr><td>Status</td><td>Recommended</td><td>Active / Inactive / Disabled. Apps Script adds this column if missing</td></tr>
+                  <tr><td>Login session</td><td>Auto</td><td>Device session id. Apps Script adds this column if missing</td></tr>
+                  <tr><td>Remarks</td><td>No</td><td>Notes. Control row: update message</td></tr>
                 </tbody>
               </table>
             </div>
@@ -688,8 +649,8 @@
           <div class="panel">
             <div class="panel-header">
               <div>
-                <div class="panel-title">Apps Script (optional write API)</div>
-                <div class="panel-sub">If you do not use SheetDB, deploy this script on the same spreadsheet, then paste the web app URL above.</div>
+                <div class="panel-title">Apps Script (recommended write API)</div>
+                <div class="panel-sub">Required when SheetDB returns 429. Open your Google Sheet → Extensions → Apps Script → paste this → Deploy → Web app (Anyone). Then paste the URL above.</div>
               </div>
               <button class="btn btn-secondary" type="button" id="copyScriptBtn">Copy script</button>
             </div>
@@ -698,36 +659,6 @@
         </section>
       </div>
     </main>
-  </div>
-
-  <div class="modal" id="customerModal">
-    <div class="modal-box">
-      <div class="modal-header">
-        <div class="modal-title" id="customerModalTitle">Edit customer</div>
-        <button class="close" type="button" data-close="customerModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="editIndex" />
-        <div class="form-grid">
-          <div class="form-group"><label>Name <span class="req">*</span></label><input id="editName" /></div>
-          <div class="form-group"><label>Mobile <span class="req">*</span></label><input id="editMobile" maxlength="10" /></div>
-          <div class="form-group"><label>Email</label><input id="editEmail" /></div>
-          <div class="form-group"><label>Shop name <span class="req">*</span></label><input id="editShop" /></div>
-          <div class="form-group"><label>Expire date</label><input id="editExpire" type="date" /></div>
-          <div class="form-group">
-            <label>Status</label>
-            <select id="editStatus"><option>Active</option><option>Inactive</option><option>Disabled</option></select>
-          </div>
-          <div class="form-group"><label>Login key</label><input id="editKey" class="mono" /></div>
-          <div class="form-group"><label>Amount</label><input id="editAmount" /></div>
-          <div class="form-group full"><label>Remarks</label><input id="editRemarks" /></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" data-close="customerModal">Cancel</button>
-        <button class="btn btn-primary" type="button" id="saveCustomerBtn">Save customer</button>
-      </div>
-    </div>
   </div>
 
   <div class="toast" id="toast"></div>

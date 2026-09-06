@@ -6,8 +6,7 @@
   "updateMessage": "A new version of NAM bill is available. Please download the latest app to continue.",
   "googleSheetId": "1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato",
   "googleSheetUrl": "https://docs.google.com/spreadsheets/d/1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato/edit?gid=0#gid=0",
-  "sheetdbUrl": "https://sheetdb.io/api/v1/y019wjypdybot",
-  "appsScriptUrl": "",
+  "appsScriptUrl": "https://script.google.com/macros/s/AKfycbxjLrd4XB11GwxmntVLpOAWPENBDmmaq9L01OH7ek28yd-sbM8eP1-asZ3PdcgDhQuQeQ/exec",
   "requireSheetRecord": true,
   "blockDisabledAccounts": true
 }
