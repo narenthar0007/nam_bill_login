@@ -57,7 +57,7 @@
     remarks: 'Remarks',
   };
 
-  const APPS_SCRIPT = "/**\n * NAM bill — Google Sheet write API\n *\n * HOW TO DEPLOY (important — fixes \"fetch failed\"):\n * 1. In the spreadsheet: Extensions → Apps Script\n * 2. Delete old code, paste THIS entire file, Save (Ctrl+S)\n * 3. Deploy → New deployment → Type: Web app\n * 4. Description: nam-bill\n * 5. Execute as: Me\n * 6. Who has access: Anyone   ← MUST be Anyone (not \"Only myself\")\n * 7. Deploy → Authorize → copy the Web app URL (.../exec)\n * 8. Paste that URL in admin Settings → Google Apps Script URL → Save\n *\n * If you change code later: Deploy → Manage deployments → Edit (pencil)\n * → Version: New version → Deploy\n *\n * Sheet:\n * https://docs.google.com/spreadsheets/d/1Gr7vHrtQZ_wRrFsv3y_mCJ6qdNeSB7x_TkQhUCY3ato/edit?gid=0#gid=0\n *\n * Headers (row 1):\n * Name, Mobile Number, Email ID, Date of payment, Date of login, Expire date,\n * Payment mode, Amount, Login key, Shop name, User Code, Is Login,\n * Status, Login session, Remarks\n */\n\nvar REQUIRED_HEADERS = [\n  'Name',\n  'Mobile Number',\n  'Email ID',\n  'Date of payment',\n  'Date of login',\n  'Expire date',\n  'Payment mode',\n  'Amount',\n  'Login key',\n  'Shop name',\n  'User Code',\n  'Is Login',\n  'Status',\n  'Login session',\n  'Remarks',\n];\n\nfunction ensureHeaders_(sheet) {\n  var lastCol = Math.max(sheet.getLastColumn(), 1);\n  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) {\n    return String(h || '').trim();\n  });\n  var changed = false;\n  REQUIRED_HEADERS.forEach(function (h) {\n    if (headers.indexOf(h) === -1) {\n      headers.push(h);\n      changed = true;\n    }\n  });\n  if (changed) {\n    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\n  }\n  return headers;\n}\n\nfunction doGet(e) {\n  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];\n  var headers = ensureHeaders_(sheet);\n  var action = String((e && e.parameter && e.parameter.action) || 'list').toLowerCase();\n  var values = sheet.getDataRange().getValues();\n  var rows = [];\n  for (var i = 1; i < values.length; i++) {\n    var row = {};\n    headers.forEach(function (h, idx) {\n      row[String(h)] = values[i][idx];\n    });\n    rows.push(row);\n  }\n\n  if (action === 'check') {\n    var shop = String((e.parameter && e.parameter.shop) || '').trim().toLowerCase();\n    var key = String((e.parameter && e.parameter.key) || '').trim().toUpperCase();\n    var found = rows.filter(function (r) {\n      var rowShop = String(r['Shop name'] || '').trim().toLowerCase();\n      var rowKey = String(r['Login key'] || r['Login Key'] || '').trim().toUpperCase();\n      if (shop && key) return rowShop === shop && rowKey === key;\n      if (shop) return rowShop === shop;\n      if (key) return rowKey === key;\n      return false;\n    });\n    return json_({ rows: found, ok: true });\n  }\n\n  return json_({ rows: rows, ok: true });\n}\n\nfunction doPost(e) {\n  try {\n    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];\n    var headers = ensureHeaders_(sheet);\n    var raw = (e && e.postData && e.postData.contents) || '{}';\n    var payload = JSON.parse(raw);\n    var data = payload.data || payload;\n    var action = String(payload.action || '').toLowerCase();\n    if (action === 'loginstate') {\n      return json_(patchLoginState_(sheet, headers, data));\n    }\n    return json_(upsertRow_(sheet, headers, data));\n  } catch (err) {\n    return json_({ ok: false, error: String(err && err.message ? err.message : err) });\n  }\n}\n\nfunction upsertRow_(sheet, headers, data) {\n  var values = sheet.getDataRange().getValues();\n  var shopName = String(data['Shop name'] || '').trim();\n  var mobile = String(data['Mobile Number'] || '').trim();\n  var loginKey = String(data['Login key'] || data['Login Key'] || '').trim().toUpperCase();\n  var rowIndex = -1;\n  var shopIdx = headers.indexOf('Shop name');\n  var mobileIdx = headers.indexOf('Mobile Number');\n  var keyIdx = Math.max(headers.indexOf('Login key'), headers.indexOf('Login Key'));\n  for (var i = 1; i < values.length; i++) {\n    var rowShop = shopIdx >= 0 ? String(values[i][shopIdx] || '').trim() : '';\n    var rowMobile = mobileIdx >= 0 ? String(values[i][mobileIdx] || '').trim() : '';\n    var rowKey = keyIdx >= 0 ? String(values[i][keyIdx] || '').trim().toUpperCase() : '';\n    if ((shopName && rowShop === shopName) || (mobile && rowMobile === mobile) || (loginKey && rowKey === loginKey)) {\n      rowIndex = i + 1;\n      break;\n    }\n  }\n  var line = headers.map(function (h, idx) {\n    if (Object.prototype.hasOwnProperty.call(data, h)) return data[h];\n    return rowIndex > 0 ? values[rowIndex - 1][idx] : '';\n  });\n  if (rowIndex > 0) {\n    sheet.getRange(rowIndex, 1, 1, headers.length).setValues([line]);\n  } else {\n    sheet.appendRow(line);\n  }\n  return { ok: true };\n}\n\nfunction patchLoginState_(sheet, headers, data) {\n  var values = sheet.getDataRange().getValues();\n  var shopName = String(data['Shop name'] || '').trim().toLowerCase();\n  var loginKey = String(data['Login key'] || data['Login Key'] || '').trim().toUpperCase();\n  var shopIdx = headers.indexOf('Shop name');\n  var keyIdx = Math.max(headers.indexOf('Login key'), headers.indexOf('Login Key'));\n  var rowIndex = -1;\n  for (var i = 1; i < values.length; i++) {\n    var rowShop = shopIdx >= 0 ? String(values[i][shopIdx] || '').trim().toLowerCase() : '';\n    var rowKey = keyIdx >= 0 ? String(values[i][keyIdx] || '').trim().toUpperCase() : '';\n    if (\n      (shopName && loginKey && rowShop === shopName && rowKey === loginKey) ||\n      (shopName && !loginKey && rowShop === shopName) ||\n      (loginKey && !shopName && rowKey === loginKey)\n    ) {\n      rowIndex = i + 1;\n      break;\n    }\n  }\n  if (rowIndex < 0) return { ok: false, error: 'Row not found' };\n  var line = values[rowIndex - 1].slice();\n  while (line.length < headers.length) line.push('');\n  headers.forEach(function (h, idx) {\n    if (Object.prototype.hasOwnProperty.call(data, h)) line[idx] = data[h];\n  });\n  sheet.getRange(rowIndex, 1, 1, headers.length).setValues([line]);\n  return { ok: true };\n}\n\nfunction json_(obj) {\n  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);\n}\n";
+  const APPS_SCRIPT = "/**\n * NAM bill — Google Sheet write API\n *\n * Deploy as WEB APP (not Library):\n * Deploy → New deployment → Web app\n * Execute as: Me\n * Who has access: Anyone\n * Copy URL ending with /exec\n *\n * Upsert rules:\n * 1) Same Shop name (case-insensitive) → update that row\n * 2) Else → append a NEW row\n * Never match by Login key alone — keys repeat for the same day/period.\n */\n\nvar REQUIRED_HEADERS = [\n  'Name',\n  'Mobile Number',\n  'Email ID',\n  'Date of payment',\n  'Date of login',\n  'Expire date',\n  'Payment mode',\n  'Amount',\n  'Login key',\n  'Shop name',\n  'User Code',\n  'Is Login',\n  'Status',\n  'Login session',\n  'Remarks',\n];\n\nfunction headerIndex_(headers, names) {\n  for (var i = 0; i < names.length; i++) {\n    var idx = headers.indexOf(names[i]);\n    if (idx >= 0) return idx;\n  }\n  return -1;\n}\n\nfunction ensureHeaders_(sheet) {\n  var lastCol = Math.max(sheet.getLastColumn(), 1);\n  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) {\n    return String(h || '').trim();\n  });\n  var changed = false;\n  REQUIRED_HEADERS.forEach(function (h) {\n    if (headers.indexOf(h) === -1) {\n      headers.push(h);\n      changed = true;\n    }\n  });\n  if (changed) {\n    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\n  }\n  return headers;\n}\n\nfunction doGet(e) {\n  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];\n  var headers = ensureHeaders_(sheet);\n  var action = String((e && e.parameter && e.parameter.action) || 'list').toLowerCase();\n  var values = sheet.getDataRange().getValues();\n  var rows = [];\n  for (var i = 1; i < values.length; i++) {\n    var row = {};\n    headers.forEach(function (h, idx) {\n      row[String(h)] = values[i][idx];\n    });\n    // Skip fully empty rows\n    var hasData = headers.some(function (h, idx) {\n      return String(values[i][idx] == null ? '' : values[i][idx]).trim() !== '';\n    });\n    if (hasData) rows.push(row);\n  }\n\n  if (action === 'check') {\n    var shop = String((e.parameter && e.parameter.shop) || '').trim().toLowerCase();\n    var key = String((e.parameter && e.parameter.key) || '').trim().toUpperCase();\n    var found = rows.filter(function (r) {\n      var rowShop = String(r['Shop name'] || '').trim().toLowerCase();\n      var rowKey = String(r['Login key'] || r['Login Key'] || '').trim().toUpperCase();\n      if (shop && key) return rowShop === shop && rowKey === key;\n      if (shop) return rowShop === shop;\n      if (key) return rowKey === key;\n      return false;\n    });\n    return json_({ rows: found, ok: true });\n  }\n\n  return json_({ rows: rows, ok: true });\n}\n\nfunction doPost(e) {\n  try {\n    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];\n    var headers = ensureHeaders_(sheet);\n    var raw = (e && e.postData && e.postData.contents) || '{}';\n    var payload = JSON.parse(raw);\n    var data = payload.data || payload;\n    var action = String(payload.action || '').toLowerCase();\n    if (action === 'loginstate') {\n      return json_(patchLoginState_(sheet, headers, data));\n    }\n    return json_(upsertRow_(sheet, headers, data, action === 'create'));\n  } catch (err) {\n    return json_({ ok: false, error: String(err && err.message ? err.message : err) });\n  }\n}\n\nfunction findRowIndex_(values, headers, data, forceCreate) {\n  if (forceCreate) return -1;\n\n  // IMPORTANT: License keys are derived from issue/expiry day only, so many\n  // shops can share the same key on the same day. Never match by Login key alone\n  // or new shops overwrite an existing row.\n  var shopName = String(data['Shop name'] || '').trim().toLowerCase();\n  var shopIdx = headerIndex_(headers, ['Shop name']);\n  if (!shopName || shopIdx < 0) return -1;\n\n  for (var i = 1; i < values.length; i++) {\n    var rowShop = String(values[i][shopIdx] || '').trim().toLowerCase();\n    if (rowShop && rowShop === shopName) return i + 1;\n  }\n  return -1;\n}\n\nfunction upsertRow_(sheet, headers, data, forceCreate) {\n  var values = sheet.getDataRange().getValues();\n  var rowIndex = findRowIndex_(values, headers, data, forceCreate);\n\n  var line = headers.map(function (h, idx) {\n    if (Object.prototype.hasOwnProperty.call(data, h)) return data[h];\n    return rowIndex > 0 ? values[rowIndex - 1][idx] : '';\n  });\n\n  if (rowIndex > 0) {\n    sheet.getRange(rowIndex, 1, 1, headers.length).setValues([line]);\n    return { ok: true, updated: true, created: false, row: rowIndex };\n  }\n\n  // Explicit next-row write (more reliable than appendRow with sparse sheets)\n  var nextRow = Math.max(sheet.getLastRow() + 1, 2);\n  sheet.getRange(nextRow, 1, 1, headers.length).setValues([line]);\n  return { ok: true, updated: false, created: true, row: nextRow };\n}\n\nfunction patchLoginState_(sheet, headers, data) {\n  var values = sheet.getDataRange().getValues();\n  var shopName = String(data['Shop name'] || '').trim().toLowerCase();\n  var loginKey = String(data['Login key'] || data['Login Key'] || '').trim().toUpperCase();\n  var shopIdx = headerIndex_(headers, ['Shop name']);\n  var keyIdx = headerIndex_(headers, ['Login key', 'Login Key']);\n  var rowIndex = -1;\n\n  for (var i = 1; i < values.length; i++) {\n    var rowShop = shopIdx >= 0 ? String(values[i][shopIdx] || '').trim().toLowerCase() : '';\n    var rowKey = keyIdx >= 0 ? String(values[i][keyIdx] || '').trim().toUpperCase() : '';\n    if (shopName && loginKey && rowShop === shopName && rowKey === loginKey) {\n      rowIndex = i + 1;\n      break;\n    }\n    if (shopName && rowShop === shopName) {\n      rowIndex = i + 1;\n      break;\n    }\n    if (loginKey && rowKey === loginKey) {\n      rowIndex = i + 1;\n      break;\n    }\n  }\n\n  if (rowIndex < 0) return { ok: false, error: 'Row not found' };\n  var line = values[rowIndex - 1].slice();\n  while (line.length < headers.length) line.push('');\n  headers.forEach(function (h, idx) {\n    if (Object.prototype.hasOwnProperty.call(data, h)) line[idx] = data[h];\n  });\n  sheet.getRange(rowIndex, 1, 1, headers.length).setValues([line]);\n  return { ok: true, row: rowIndex };\n}\n\nfunction json_(obj) {\n  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);\n}\n";
   let customers = [];
   let selectedDays = 90;
   let useCustom = false;
@@ -76,7 +76,7 @@
   }
 
   function saveSettings(partial) {
-    const next = { ...defaultSettings(), ...loadSettings(), ...partial };
+    const next = { ...defaultSettings(), ...normalizedSettings(loadSettings()), ...partial };
     localStorage.setItem('namAdminSettings', Secure.encryptText(JSON.stringify(next)));
     return next;
   }
@@ -94,6 +94,25 @@
     };
   }
 
+  function isValidAppsScriptUrl(url) {
+    const value = String(url || '').trim();
+    return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\/?$/.test(value);
+  }
+
+  function normalizedSettings(raw) {
+    const base = { ...defaultSettings(), ...(raw || {}) };
+    const apps = String(base.appsScriptUrl || '').trim();
+    if (!isValidAppsScriptUrl(apps)) base.appsScriptUrl = DEFAULT_APPS_SCRIPT_URL;
+    base.sheetdbUrl = '';
+    const sheet = String(base.googleSheetUrl || '').trim();
+    if (!extractSheetId(sheet)) base.googleSheetUrl = DEFAULT_SHEET_URL;
+    return base;
+  }
+
+  function currentSettings() {
+    return normalizedSettings(loadSettings());
+  }
+
   function extractSheetId(urlOrId) {
     const raw = String(urlOrId || '').trim();
     const m = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
@@ -109,11 +128,13 @@
   }
 
   function connectDefaultSheet() {
-    const current = loadSettings();
-    const id = extractSheetId(current.googleSheetUrl);
+    const current = currentSettings();
     saveSettings({
-      googleSheetUrl: (!id || id === DEFAULT_SHEET_ID) ? DEFAULT_SHEET_URL : current.googleSheetUrl,
-      sheetdbUrl: '', // SheetDB disabled — use Google Sheet + Apps Script only
+      googleSheetUrl: current.googleSheetUrl || DEFAULT_SHEET_URL,
+      appsScriptUrl: isValidAppsScriptUrl(current.appsScriptUrl)
+        ? current.appsScriptUrl
+        : DEFAULT_APPS_SCRIPT_URL,
+      sheetdbUrl: '',
     });
   }
 
@@ -126,7 +147,7 @@
 
   function setSheetStatus(message, type) {
     const el = $('dashSheetStatus');
-    const url = ({ ...defaultSettings(), ...loadSettings() }).googleSheetUrl || DEFAULT_SHEET_URL;
+    const url = currentSettings().googleSheetUrl || DEFAULT_SHEET_URL;
     el.className = `sheet-status ${type || ''}`.trim();
     el.innerHTML = `${escapeHtml(message)}<br><a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`;
   }
@@ -286,7 +307,7 @@
         }
       };
       const script = document.createElement('script');
-      script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${extractSheetGid(loadSettings().googleSheetUrl)}`;
+      script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${extractSheetGid(currentSettings().googleSheetUrl)}`;
       script.onerror = () => {
         clearTimeout(timeout);
         reject(new Error('Could not read Google Sheet. Share as Anyone with the link can view.'));
@@ -324,18 +345,11 @@
   }
 
   async function loadCustomers() {
-    const settings = { ...defaultSettings(), ...loadSettings() };
+    const settings = currentSettings();
     const sheetId = extractSheetId(settings.googleSheetUrl) || DEFAULT_SHEET_ID;
     const errors = [];
 
-    // Direct Google Sheet read (no SheetDB).
-    try {
-      const rows = await loadGviz(sheetId);
-      if (rows.length) return rows.map((row) => Secure.decryptCustomerRow(row));
-    } catch (err) {
-      errors.push(err.message);
-    }
-
+    // Prefer Apps Script (fresh writes). Fall back to public sheet read.
     if (settings.appsScriptUrl) {
       try {
         const base = httpsUrl(settings.appsScriptUrl);
@@ -346,6 +360,13 @@
       } catch (err) {
         errors.push(err.message);
       }
+    }
+
+    try {
+      const rows = await loadGviz(sheetId);
+      if (rows.length) return rows.map((row) => Secure.decryptCustomerRow(row));
+    } catch (err) {
+      errors.push(err.message);
     }
 
     throw new Error(errors.filter(Boolean).join(' ') || 'Could not load Google Sheet. Share it as Anyone with the link can view.');
@@ -396,46 +417,115 @@
     return Secure.encryptCustomerRow(base);
   }
 
-  async function saveViaAppsScript(appsScriptUrl, plain) {
+  async function saveViaAppsScript(appsScriptUrl, plain, action) {
+    const url = httpsUrl(appsScriptUrl);
+    const body = JSON.stringify({ action: action || 'upsert', data: plain });
+    let text = '';
     let res;
+
     try {
-      res = await fetch(httpsUrl(appsScriptUrl), {
+      res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ data: plain }),
+        body,
         redirect: 'follow',
       });
+      text = await res.text();
     } catch (err) {
-      throw new Error(
-        `Fetch failed: ${err.message || err}. Redeploy Apps Script with Who has access = Anyone, then paste the new /exec URL.`
-      );
+      // Browser CORS / opaque redirect — still try fire-and-verify via GET.
+      try {
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body,
+        });
+        return { opaque: true };
+      } catch {
+        throw new Error(
+          `Fetch failed: ${err.message || err}. Open Settings, paste the /exec Apps Script URL, Save and sync, then try again.`
+        );
+      }
     }
-    const text = await res.text();
+
     if (/accounts\.google\.com|Sign in|signin/i.test(text) || res.status === 401) {
       throw new Error(
-        'Apps Script is locked (Google login page). Open Deploy → Manage deployments → Edit → Who has access: Anyone → New version → Deploy. Then save the URL again in Settings.'
+        'Apps Script is locked (Google login page). Deploy → Manage deployments → Edit → Who has access: Anyone → New version → Deploy.'
       );
     }
     if (!res.ok) throw new Error(`Apps Script request failed (${res.status}): ${text.slice(0, 120)}`);
     try {
       const json = JSON.parse(text);
       if (json && json.ok === false) throw new Error(json.error || 'Apps Script returned ok:false');
+      return json || { ok: true };
     } catch (err) {
       if (/Apps Script|ok:false/.test(String(err.message || ''))) throw err;
-      // Non-JSON success bodies from older redirects are ignored if HTTP ok
+      return { ok: true };
+    }
+  }
+
+  async function verifySheetWrite(shop, loginKey) {
+    const settings = currentSettings();
+    const base = httpsUrl(settings.appsScriptUrl);
+    const joiner = base.includes('?') ? '&' : '?';
+    const url = `${base}${joiner}action=check&shop=${encodeURIComponent(shop)}`;
+    const res = await fetch(url, { redirect: 'follow', cache: 'no-store' });
+    const text = await res.text();
+    if (/accounts\.google\.com|Sign in/i.test(text)) {
+      throw new Error('Could not verify save: Apps Script access is not set to Anyone.');
+    }
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error('Could not verify save: Apps Script did not return JSON.');
+    }
+    const rows = Array.isArray(data?.rows) ? data.rows : [];
+    const key = String(loginKey || '').trim().toUpperCase();
+    const found = rows.some((row) => {
+      const rowShop = field(row, COLS.shop).toLowerCase();
+      const rowKey = field(row, COLS.loginKey, 'Login Key').toUpperCase();
+      return rowShop === String(shop || '').trim().toLowerCase() && rowKey === key;
+    });
+    if (!found) {
+      throw new Error(
+        'Save did not appear in Google Sheet. Check Apps Script is bound to this spreadsheet and redeploy as Web app (Anyone).'
+      );
     }
   }
 
   async function saveRow(payload) {
-    const settings = { ...defaultSettings(), ...loadSettings() };
+    const settings = currentSettings();
     const plain = sheetRowPayload(payload);
     const appsScriptUrl = String(settings.appsScriptUrl || '').trim();
-    if (!appsScriptUrl) {
+    if (!isValidAppsScriptUrl(appsScriptUrl)) {
       throw new Error(
-        'Paste your Google Apps Script web app URL in Settings to save keys directly to Google Sheets.'
+        'Paste a valid Google Apps Script /exec URL in Settings (Deploy → Web app → Anyone).'
       );
     }
-    await saveViaAppsScript(appsScriptUrl, plain);
+    const shop = String(payload[COLS.shop] || '').trim();
+    const key = payload[COLS.loginKey];
+    if (!shop) throw new Error('Shop name is required.');
+
+    // Ask the sheet if this shop already exists (do not trust login-key uniqueness).
+    let shopExists = false;
+    try {
+      const base = httpsUrl(appsScriptUrl);
+      const joiner = base.includes('?') ? '&' : '?';
+      const check = await fetchJson(`${base}${joiner}action=check&shop=${encodeURIComponent(shop)}`);
+      const rows = Array.isArray(check?.rows) ? check.rows : [];
+      shopExists = rows.some((row) => field(row, COLS.shop).toLowerCase() === shop.toLowerCase());
+    } catch {
+      shopExists = customers.some((row) => field(row, COLS.shop).toLowerCase() === shop.toLowerCase());
+    }
+
+    const action = shopExists ? 'upsert' : 'create';
+    const result = await saveViaAppsScript(appsScriptUrl, plain, action);
+    if (shop && key) {
+      await new Promise((r) => setTimeout(r, 800));
+      await verifySheetWrite(shop, key);
+    }
+    return { ...(result || {}), action, shopExists };
   }
 
   function showPage(name) {
@@ -494,7 +584,7 @@
   }
 
   function fillSettingsForm() {
-    const s = { ...defaultSettings(), ...loadSettings() };
+    const s = currentSettings();
     $('googleSheetUrl').value = s.googleSheetUrl || '';
     $('appsScriptUrl').value = s.appsScriptUrl || '';
     $('minAppVersion').value = s.minAppVersion || '1.0.0';
@@ -546,7 +636,7 @@
   }
 
   function controlPayload() {
-    const s = { ...defaultSettings(), ...loadSettings() };
+    const s = currentSettings();
     return {
       [COLS.name]: 'NAM bill app control',
       [COLS.mobile]: '0000000000',
@@ -561,6 +651,8 @@
       [COLS.loginKey]: $('minAppVersion').value.trim() || '1.0.0',
       [COLS.status]: $('forceUpdate').value === 'true' ? 'ForceUpdate' : 'Active',
       [COLS.remarks]: $('updateMessage').value.trim(),
+      [COLS.isLogin]: 'FALSE',
+      [COLS.loginSession]: '',
     };
   }
 
@@ -647,6 +739,7 @@
 
   $('generateBtn').addEventListener('click', async () => {
     const err = $('generateError');
+    const btn = $('generateBtn');
     err.classList.remove('show');
     const shop = $('custShop').value.trim();
     const renewalInput = ($('renewalCode').value || '').replace(/\D/g, '');
@@ -686,11 +779,13 @@
       err.classList.add('show');
       return;
     }
+    btn.disabled = true;
+    btn.textContent = 'Saving to Google Sheet…';
     try {
       existingRecord = customers.find((row) => field(row, COLS.shop).toLowerCase() === shop.toLowerCase())
         || customers.find((row) => field(row, COLS.mobile) === payload[COLS.mobile])
         || null;
-      await saveRow(payload);
+      const saveInfo = await saveRow(payload);
       if (existingRecord) {
         const idx = customers.indexOf(existingRecord);
         if (idx >= 0) customers[idx] = { ...existingRecord, ...payload };
@@ -702,13 +797,20 @@
       const result = $('generateResult');
       result.style.display = 'flex';
       result.className = 'sheet-status';
-      result.innerHTML = `<div><strong>Key saved to Google Sheet</strong><br><span class="mono">${escapeHtml(key)}</span><br>Valid until ${expiryDate.toLocaleDateString('en-IN')}</div>`;
-      toast('License key generated');
-      // Refresh sheet quietly; stay on Generate Key (do not open Customers).
+      const mode = saveInfo?.created || saveInfo?.action === 'create'
+        ? `New row created${saveInfo?.row ? ` (#${saveInfo.row})` : ''}`
+        : `Updated existing shop${saveInfo?.row ? ` (row #${saveInfo.row})` : ''}`;
+      result.innerHTML = `<div><strong>${escapeHtml(mode)}</strong><br><span class="mono">${escapeHtml(key)}</span><br>Shop: ${escapeHtml(shop)} · Valid until ${expiryDate.toLocaleDateString('en-IN')}<br><a href="${escapeHtml(currentSettings().googleSheetUrl)}" target="_blank" rel="noopener">Open sheet</a> and scroll to the bottom if it is a new shop.</div>`;
+      toast(mode);
       syncSheet().catch(() => {});
     } catch (ex) {
       err.textContent = ex.message || 'Could not save key to Google Sheet.';
       err.classList.add('show');
+      const result = $('generateResult');
+      result.style.display = 'none';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Generate and save to sheet';
     }
   });
 
@@ -746,7 +848,7 @@
 
   $('exportCsvBtn').addEventListener('click', () => downloadCsv(visibleCustomers(), 'nam-bill-customers.csv'));
   $('exportControlBtn').addEventListener('click', () => {
-    const s = { ...defaultSettings(), ...loadSettings() };
+    const s = currentSettings();
     downloadJson('license-control.json', {
       minAppVersion: $('minAppVersion').value.trim() || s.minAppVersion,
       latestAppVersion: $('latestAppVersion').value.trim() || s.latestAppVersion,
@@ -755,7 +857,7 @@
       updateMessage: $('updateMessage').value.trim(),
       googleSheetId: extractSheetId($('googleSheetUrl').value) || DEFAULT_SHEET_ID,
       googleSheetUrl: $('googleSheetUrl').value.trim(),
-      appsScriptUrl: $('appsScriptUrl').value.trim(),
+      appsScriptUrl: $('appsScriptUrl').value.trim() || s.appsScriptUrl,
       requireSheetRecord: $('requireSheetRecord').value !== 'false',
       blockDisabledAccounts: true,
     });
@@ -763,14 +865,19 @@
 
   $('saveSheetSettingsBtn').addEventListener('click', async () => {
     const url = $('googleSheetUrl').value.trim();
+    const apps = $('appsScriptUrl').value.trim() || DEFAULT_APPS_SCRIPT_URL;
     if (!extractSheetId(url)) {
       toast('Paste a valid Google Sheet URL');
+      return;
+    }
+    if (!isValidAppsScriptUrl(apps)) {
+      toast('Apps Script URL must end with /exec (Web app, not Library)');
       return;
     }
     try {
       saveSettings({
         googleSheetUrl: url.startsWith('http') ? Secure.assertHttpsUrl(url) : url,
-        appsScriptUrl: $('appsScriptUrl').value.trim() ? Secure.assertHttpsUrl($('appsScriptUrl').value.trim()) : '',
+        appsScriptUrl: Secure.assertHttpsUrl(apps),
         sheetdbUrl: '',
       });
     } catch (err) {
